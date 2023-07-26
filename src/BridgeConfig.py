@@ -1,9 +1,8 @@
-from typing import Any, Dict
+from typing import Dict
 import json
 
 from lib.py3quake3 import PyQuake3
 from src.UrtDiscordServer import UrtDiscordServer
-
 
 class BridgeConfig():
 
@@ -12,8 +11,7 @@ class BridgeConfig():
 
         self.discordKey : str = None
         self.demoChannelId : int = None
-        self.demoFileLog : str = None
-        self.demoUrl : str = None
+        self.statusChannelId : str = None
         self.refresh : int = None
         self.logoUrl : str = None
 
@@ -36,8 +34,7 @@ class BridgeConfig():
             
             self.discordKey = datas['discordKey']
             self.demoChannelId = datas['demoChannelId']
-            self.demoFileLog = datas['demoFileLog']
-            self.demoUrl = datas['demoUrl']
+            self.statusChannelId = datas['statusChannelId']
             self.refresh = datas['refreshInterval']
             self.logoUrl = datas['logo']
             for serv in datas['servers']:
@@ -58,7 +55,7 @@ class BridgeConfig():
         discordChannelId = serverInfos["channelId"]
         address = f"{ip}:{port}"
 
-        self.serverAdressDict[address] = UrtDiscordServer(discordChannelId) 
+        self.serverAdressDict[address] = UrtDiscordServer(address, discordChannelId) 
         self.channelIdDict[discordChannelId] = PyQuake3(address, rconpassword)
 
     def getChannel(self, serverAdress):
@@ -72,8 +69,7 @@ class BridgeConfig():
         res += "=============================== BridgeConfig ==============================="     
         res += f"\n|------> discordKey : {self.discordKey}"
         res += f"\n|------> demoChannelId : {self.demoChannelId}"
-        res += f"\n|------> demoFileLog : {self.demoFileLog}"
-        res += f"\n|------> demoUrl : {self.demoUrl}"
+        res += f"\n|------> statusChannelId : {self.statusChannelId}"
         res += f"\n|------> refresh : {self.refresh}"
         res += f"\n|------> Servers :"
         for server in self.serverAdressDict:

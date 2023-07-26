@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 from pydantic import BaseModel
 
 class DiscordMessageEmbed(BaseModel):
@@ -17,3 +17,12 @@ class DemoInfos(BaseModel):
     path : str
     name : str
     chatMessage : str
+
+class Player(BaseModel):
+    name : str
+    ingame : bool
+    running : bool
+class ServerInfos(BaseModel):
+    serverAddress : str
+    playersList: Union[List[Player], None]
+    mapname: Union[str, None]

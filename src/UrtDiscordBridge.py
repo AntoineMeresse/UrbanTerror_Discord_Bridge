@@ -2,7 +2,9 @@ from queue import Queue
 import textwrap
 from threading import RLock
 
-from src.RequestObjects import DemoInfos, DiscordMessage
+import discord
+
+from src.RequestObjects import DemoInfos, DiscordMessage, ServerInfos
 from src.BridgeConfig import BridgeConfig
 
 from src.utils import generateEmbed
@@ -19,6 +21,9 @@ class UrtDiscordBridge():
         # Locks
         self.messagesLock = RLock()
         self.demosLock = RLock()
+
+        # Status
+        self.status : discord.Message = None
 
     def addEmbed(self, embedInfos):
         with self.messagesLock:
@@ -52,6 +57,16 @@ class UrtDiscordBridge():
         return self.demos
         
     ###########################################################
+
+    def setServerInfo(self, infos : ServerInfos):
+        if (infos.serverAddress is not None):
+            for serverInfo in self.bridgeConfig.serverAdressDict.values():
+                if serverInfo.address == infos.serverAddress:
+                    if (infos.playersList is not None):
+                        serverInfo.players = infos.playersList
+                    if (infos.mapname is not None):
+                        serverInfo.mapname = infos.mapname
+                    return
 
     # def getCurrentMap(self):
     #     if (self.currentMap is not None and self.currentMap != ""):

@@ -6,7 +6,7 @@ import discord
 from src.ApiCalls import getMapInfo, getToprunsInfo
 from src.BridgeConfig import BridgeConfig
 
-from src.RequestObjects import DiscordMessage
+from src.RequestObjects import DiscordMessage, Player
 
 def generateEmbed(mapname, mapinfos, players, bridgeConfig : BridgeConfig) -> discord.Embed:
     emb = discord.Embed(
@@ -38,18 +38,17 @@ def getMapInfosForEmbed(mapinfo, embed : discord.Embed, bridgeConfig : BridgeCon
         embed.set_thumbnail(url=bridgeConfig.logoUrl)
         embed.set_image(url=bridgeConfig.levelshotUrl.format(mapinfo['filename']))
 
-def getPlayersForEmbed(players, emb : discord.Embed):
+def getPlayersForEmbed(players : List[Player], emb : discord.Embed):
         nbPlayers = 0
         game = list()
         spec = list()
         s = ""
         if (players is not None and len(players) > 0):
-            for x in players:
-                p = players[x]
+            for p in players:
                 name = p.name
                 if (name != "World"):
                     nbPlayers += 1
-                    if (p.team == 3):
+                    if (not p.ingame):
                         spec.append(name)
                     else:
                         game.append(name)

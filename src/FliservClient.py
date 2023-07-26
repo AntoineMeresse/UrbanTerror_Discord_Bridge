@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Union
+import datetime
+from typing import Any, List, Union
 import discord
 from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
@@ -67,9 +68,10 @@ class FliservClient(discord.Client):
         print("setup_hook")
         if (len(self.urt_discord_bridge.bridgeConfig.serverAdressDict) > 0):
             self.messageTask = self.loop.create_task(self.send_message_task())
-            # self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
         if (self.urt_discord_bridge.bridgeConfig.demoChannelId):
             self.demoTask = self.loop.create_task(self.send_demos_task())
+        if (self.urt_discord_bridge.bridgeConfig.statusChannelId):
+            self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
         
 
     async def send_message_task(self):
@@ -111,3 +113,38 @@ class FliservClient(discord.Client):
                 await asyncio.sleep(self.interval)
         else:
             print("Could not find channel for demos")
+
+    async def deleteStatusMessage(self, channel : discord.TextChannel):
+        messages = [message async for message in channel.history(limit=None)]
+        for m in messages:
+            if (m.author == self.user):
+                await m.delete()
+    
+    def generateEmbedStatus(self) -> List[discord.Embed]:
+        embedList = list()
+        for x in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
+            embedList.append(generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig))
+        return embedList
+    
+    def generateUpdateDateMessage(self) -> str:
+        dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return f"```Update at : {dt}```"
+
+    async def initStatusMessage(self, channel : discord.TextChannel):
+        self.urt_discord_bridge.status = await channel.send(embeds=self.generateEmbedStatus())
+    
+    async def updateStatusServers(self):
+        if (self.urt_discord_bridge.status is not None):
+            print("Update servers")
+            await self.urt_discord_bridge.status.edit(content=self.generateUpdateDateMessage(),embeds=self.generateEmbedStatus())
+
+    async def set_discord_server_infos_task(self):
+        await self.wait_until_ready()
+        channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.statusChannelId)
+        if (channel is not None):
+            await self.deleteStatusMessage(channel)
+            await self.initStatusMessage(channel)
+            while not self.is_closed():
+                await self.updateStatusServers()
+                await asyncio.sleep(10) # Params
+            

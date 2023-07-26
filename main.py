@@ -9,7 +9,7 @@ from src.BridgeConfig import BridgeConfig
 from src.FliservClient import FliservClient
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import DiscordMessage
-from src.RequestObjects import DemoInfos
+from src.RequestObjects import DemoInfos, ServerInfos
 
 ####################################### Discord Bot #######################################
 
@@ -51,6 +51,11 @@ async def sendDemo(demo : DemoInfos):
     bridge.addDemos(demosInfos= demo)
     print(bridge.demos)
     return demo
+
+@app.post("/server")
+async def updateServer(infos : ServerInfos):
+    bridge.setServerInfo(infos)
+    return infos
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=5000)
