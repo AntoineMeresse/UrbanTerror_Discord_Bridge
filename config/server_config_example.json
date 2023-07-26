@@ -4,6 +4,7 @@
     "demoChannelId" : 1234,
     "demoFileLog" : "apisend.log",
     "refreshInterval" : 1,
+    "logo" : "https://urtjumpmaps.com/static/imgs/urtshells.png",
     "servers" : [
         {
             "ip" : "ip_server1",
@@ -21,8 +22,10 @@
     "api" : {
         "urls" : {
             "global" : "http://51.195.119.214:5000/",
-            "topruns" : "http://51.195.119.214:5000/mapinfo/runs",
-            "mapinfo" : "http://51.195.119.214:5000/mapinfo/requestdata"
+            "topruns" : "http://51.195.119.214:5000/runs/requestdata",
+            "mapinfo" : "http://51.195.119.214:5000/mapinfo/requestdata",
+            "mappage" : "https://urtjumpmaps.com/mapinfo/{}",
+            "levelshot" : "https://urtjumpmaps.com/static/imgs/lvlshots/{}.jpg"
         },
         "apikey" : "APIKEY_ASK_TO_ULBENS"
     }

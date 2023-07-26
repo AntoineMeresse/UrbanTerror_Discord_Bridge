@@ -3,7 +3,7 @@ from typing import Any, Union
 import discord
 from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
-from src.utils import convertMessage, discordBlock, generateEmbed
+from src.utils import convertMessage, discordBlock, generateEmbed, generateEmbedToprun
 
 class FliservClient(discord.Client):
     def __init__(self, *, intents: discord.Intents, urt_discord_bridge = None, **options: Any) -> None:
@@ -28,16 +28,18 @@ class FliservClient(discord.Client):
             if (mapname is None):
                 pass
                 # Voir en fonction du channelId
-            # if (cmd == "!topruns"):
-            #     await message.channel.send(embed=generateEmbedToprun(mapname))
-            # elif (cmd == "!top"):
-            #     await message.channel.send(embed=generateEmbedToprun(mapname, False))
+            if (cmd == "!topruns"):
+                emb = generateEmbedToprun(mapname, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
+                await message.channel.send(embed=emb)
+            elif (cmd == "!top"):
+                emb = generateEmbedToprun(mapname, allRuns=False, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
+                await message.channel.send(embed=emb)
             elif (cmd == "!mapinfos" or cmd == "!mapinfo"):
                 emb = generateEmbed(mapname, None, None, self.urt_discord_bridge.bridgeConfig)
                 await message.channel.send(embed=emb)
-            if (cmd == "!status" and message.channel.id == self.channelId):
-                emb = self.urt_discord_bridge.generateEmbedWithCurrentInfos()
-                await message.channel.send(embed=emb)
+            # if (cmd == "!status" and message.channel.id == self.channelId):
+            #     emb = self.urt_discord_bridge.generateEmbedWithCurrentInfos()
+            #     await message.channel.send(embed=emb)
             elif (cmd == "!help"):
                 cmds = [
                     "Available commands :",

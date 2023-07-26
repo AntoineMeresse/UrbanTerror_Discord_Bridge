@@ -15,11 +15,14 @@ class BridgeConfig():
         self.demoFileLog : str = None
         self.demoUrl : str = None
         self.refresh : int = None
+        self.logoUrl : str = None
 
         self.apikey : str = None
         self.apiUrl : str = None
         self.toprunsUrl : str = None
         self.mapinfoUrl : str = None
+        self.mappageUrl : str = None
+        self.levelshotUrl : str = None
         
         self.serverAdressDict : Dict[str, UrtDiscordServer] = dict()
         self.channelIdDict : Dict[int, PyQuake3] = dict()
@@ -36,6 +39,7 @@ class BridgeConfig():
             self.demoFileLog = datas['demoFileLog']
             self.demoUrl = datas['demoUrl']
             self.refresh = datas['refreshInterval']
+            self.logoUrl = datas['logo']
             for serv in datas['servers']:
                 self.addServer(serv)
             
@@ -43,6 +47,8 @@ class BridgeConfig():
             self.apiUrl = datas['api']['urls']['global']
             self.toprunsUrl = datas['api']['urls']['topruns']
             self.mapinfoUrl = datas['api']['urls']['mapinfo']
+            self.mappageUrl = datas['api']['urls']['mappage']
+            self.levelshotUrl = datas['api']['urls']['levelshot']
             
 
     def addServer(self, serverInfos : Dict):

@@ -3,7 +3,7 @@ import re
 from typing import List
 import discord
 
-from src.ApiCalls import getMapInfo
+from src.ApiCalls import getMapInfo, getToprunsInfo
 from src.BridgeConfig import BridgeConfig
 
 from src.RequestObjects import DiscordMessage
@@ -17,13 +17,13 @@ def generateEmbed(mapname, mapinfos, players, bridgeConfig : BridgeConfig) -> di
     if (mapinfos is None):
         mapinfos = getMapInfo(mapname, bridgeConfig) 
   
-    getMapInfosForEmbed(mapinfos, emb)
+    getMapInfosForEmbed(mapinfos, emb, bridgeConfig)
     if (players is not None):
         getPlayersForEmbed(players, emb)
 
     return emb
 
-def getMapInfosForEmbed(mapinfo, embed : discord.Embed):
+def getMapInfosForEmbed(mapinfo, embed : discord.Embed, bridgeConfig : BridgeConfig):
     if mapinfo:
         embed.title = f'{mapinfo["mapname"]}'
         embed.description = f'{mapinfo["filename"]}'
@@ -35,8 +35,8 @@ def getMapInfosForEmbed(mapinfo, embed : discord.Embed):
             embed.add_field(name=f'Type{"s" if len(mapinfo["types"]) > 1 else ""}:', value=" | ".join(mapinfo["types"]))
         if(len(mapinfo["notes"]) > 0):
             embed.add_field(name=f'Note{"s" if len(mapinfo["notes"]) > 1 else ""}:', value=", ".join(mapinfo["notes"]), inline=False)
-        embed.set_thumbnail(url="https://urtjumpmaps.com/static/imgs/urtshells.png")
-        embed.set_image(url=f"https://urtjumpmaps.com/static/imgs/lvlshots/{mapinfo['filename']}.jpg")
+        embed.set_thumbnail(url=bridgeConfig.logoUrl)
+        embed.set_image(url=bridgeConfig.levelshotUrl.format(mapinfo['filename']))
 
 def getPlayersForEmbed(players, emb : discord.Embed):
         nbPlayers = 0
@@ -60,6 +60,47 @@ def getPlayersForEmbed(players, emb : discord.Embed):
             emb.add_field(name=f"In game:", value=f"{', '.join(game)}")
         if(len(spec) > 0):
             emb.add_field(name=f"In spec:", value=f"{', '.join(spec)}")
+
+def generateEmbedToprun(mapname, allRuns = True, bridgeConfig : BridgeConfig = None) -> discord.Embed:
+    t = "Topruns" if allRuns else "Top"
+    mapinfo = getToprunsInfo(mapname, bridgeConfig)
+    emb = discord.Embed(
+        color=discord.Color.from_str('0xff0000'),
+        title=f"{t} : {mapinfo['mapfilename']}"
+    )
+    emb.set_author(name=f"{mapinfo['mapname']}", url = bridgeConfig.mappageUrl.format(mapinfo['mapid']))
+    emb.set_thumbnail(url=bridgeConfig.logoUrl)
+    space = "\u1CBC\u1CBC[...]"
+    if mapinfo:
+        runs = mapinfo["runs"]
+        runsNumber = len(runs)
+        emb.description = f'Number of ways : {runsNumber}'
+        emb.set_image(url=bridgeConfig.levelshotUrl.format(mapinfo['mapfilename']))
+        if (len(runs) > 0):
+            for x in runs:
+                tmp = ""
+                i = 1
+                r = runs[x]
+                if not allRuns:
+                    r = r[:1]
+                for time in r:
+                    if (i == 1):
+                        place = ":first_place:"
+                    elif (i == 2):
+                        place = ":second_place:"
+                    elif (i == 3):
+                        place = ":third_place:"
+                    else:
+                        place = f"<:rafiqz:1095672297643319316>"
+                    r = f'{place} {time["time"]} | {time["rundate"]} | {time["playername"]}\n'
+                    if ((len(tmp) + len(r)) < (1023 - len(space))):
+                        tmp += r
+                    else:
+                        tmp += space
+                        break
+                    i+=1
+                emb.add_field(name=f"Way {x}", value=tmp, inline=False)
+    return emb
 
 def decolorstring(string):
     return re.sub('\^\d', '', string)
