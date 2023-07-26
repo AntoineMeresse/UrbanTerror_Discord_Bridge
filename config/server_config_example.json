@@ -1,0 +1,29 @@
+{
+    "discordKey" : "example",
+    "demoUrl" : "example",
+    "demoChannelId" : 1234,
+    "demoFileLog" : "apisend.log",
+    "refreshInterval" : 1,
+    "servers" : [
+        {
+            "ip" : "ip_server1",
+            "port" : 27960,
+            "rconpassword" : "rconpasswordserv1",
+            "channelId" : 12345
+        },
+        {
+            "ip" : "ip_server2",
+            "port" : 27961,
+            "rconpassword" : "rconpasswordserv2",
+            "channelId" : 123456
+        }
+    ],
+    "api" : {
+        "urls" : {
+            "global" : "http://51.195.119.214:5000/",
+            "topruns" : "http://51.195.119.214:5000/mapinfo/runs",
+            "mapinfo" : "http://51.195.119.214:5000/mapinfo/requestdata"
+        },
+        "apikey" : "APIKEY_ASK_TO_ULBENS"
+    }
+}
