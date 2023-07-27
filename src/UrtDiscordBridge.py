@@ -22,9 +22,6 @@ class UrtDiscordBridge():
         self.messagesLock = RLock()
         self.demosLock = RLock()
 
-        # Status
-        self.status : discord.Message = None
-
     def addEmbed(self, embedInfos):
         with self.messagesLock:
             #build embed

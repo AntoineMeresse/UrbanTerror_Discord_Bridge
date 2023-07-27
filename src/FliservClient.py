@@ -2,6 +2,7 @@ import asyncio
 import datetime
 from typing import Any, List, Union
 import discord
+from src.ServerButtons import ServerButtons
 from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import convertMessage, discordBlock, generateEmbed, generateEmbedToprun
@@ -119,24 +120,19 @@ class FliservClient(discord.Client):
         for m in messages:
             if (m.author == self.user):
                 await m.delete()
-    
-    def generateEmbedStatus(self) -> List[discord.Embed]:
-        embedList = list()
-        for x in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
-            embedList.append(generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig))
-        return embedList
-    
-    def generateUpdateDateMessage(self) -> str:
-        dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        return f"```Update at : {dt}```"
-
+        
     async def initStatusMessage(self, channel : discord.TextChannel):
-        self.urt_discord_bridge.status = await channel.send(embeds=self.generateEmbedStatus())
+        for x in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
+            emb = generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, servername=x.servername)
+            x.status = await channel.send(embed=emb,
+                                          view=ServerButtons(x.mapname, self.urt_discord_bridge.bridgeConfig))
     
     async def updateStatusServers(self):
-        if (self.urt_discord_bridge.status is not None):
-            print("Update servers")
-            await self.urt_discord_bridge.status.edit(content=self.generateUpdateDateMessage(),embeds=self.generateEmbedStatus())
+        for x in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
+            if (x.status is not None):
+                emb = generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
+                                    servername=x.servername)
+                await x.status.edit(embed=emb, view=ServerButtons(x.mapname, self.urt_discord_bridge.bridgeConfig))
 
     async def set_discord_server_infos_task(self):
         await self.wait_until_ready()

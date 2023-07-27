@@ -4,14 +4,18 @@ from src.RequestObjects import Player
 
 class UrtDiscordServer():
 
-    def __init__(self, address : str, discordChannelId : int) -> None:
+    def __init__(self, address : str, discordChannelId : int, servername : str = "Server") -> None:
         self.address : str = address
         self.discordChannelId = discordChannelId
         
         self.channel : Optional[Union[discord.GuildChannel, discord.Thread, discord.PrivateChannel]] = None
         
+        self.servername : str = servername
         self.mapname : str = None
         self.players : List[Player] = list()
+
+        # Status
+        self.status : discord.Message = None
 
     def setChannel(self, channel):
         self.channel = channel

@@ -49,13 +49,14 @@ class BridgeConfig():
             
 
     def addServer(self, serverInfos : Dict):
+        servername = serverInfos["name"]
         ip = serverInfos["ip"]
         port = serverInfos["port"]
         rconpassword = serverInfos["rconpassword"]
         discordChannelId = serverInfos["channelId"]
         address = f"{ip}:{port}"
 
-        self.serverAdressDict[address] = UrtDiscordServer(address, discordChannelId) 
+        self.serverAdressDict[address] = UrtDiscordServer(address, discordChannelId, servername) 
         self.channelIdDict[discordChannelId] = PyQuake3(address, rconpassword)
 
     def getChannel(self, serverAdress):

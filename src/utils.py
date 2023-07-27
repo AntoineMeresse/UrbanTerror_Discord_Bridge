@@ -1,4 +1,5 @@
 
+import datetime
 import re
 from typing import List
 import discord
@@ -8,25 +9,29 @@ from src.BridgeConfig import BridgeConfig
 
 from src.RequestObjects import DiscordMessage, Player
 
-def generateEmbed(mapname, mapinfos, players, bridgeConfig : BridgeConfig) -> discord.Embed:
+def generateEmbed(mapname, mapinfos, players, bridgeConfig : BridgeConfig, updated : datetime = None, servername : str = "") -> discord.Embed:
     emb = discord.Embed(
         color=discord.Color.from_str('0xff0000'),
-        title=f"Map : {mapname}"
+        title=f"{servername}"
     )
 
     if (mapinfos is None):
         mapinfos = getMapInfo(mapname, bridgeConfig) 
   
-    getMapInfosForEmbed(mapinfos, emb, bridgeConfig)
+    getMapInfosForEmbed(mapinfos, emb, bridgeConfig, servername)
     if (players is not None):
         getPlayersForEmbed(players, emb)
 
+    if (updated is not None):
+        emb.timestamp = updated
+        emb.set_footer(text='\u200b', icon_url="https://www.iconsdb.com/icons/preview/soylent-red/sinchronize-xxl.png")
     return emb
 
-def getMapInfosForEmbed(mapinfo, embed : discord.Embed, bridgeConfig : BridgeConfig):
+def getMapInfosForEmbed(mapinfo, embed : discord.Embed, bridgeConfig : BridgeConfig, servername : str = ""):
     if mapinfo:
-        embed.title = f'{mapinfo["mapname"]}'
-        embed.description = f'{mapinfo["filename"]}'
+        embed.title = f'{servername} - {mapinfo["mapname"]}'
+        url = bridgeConfig.mappageUrl.format(mapinfo['id']) 
+        embed.description = f'[{mapinfo["filename"]}]({url})'
         embed.add_field(name=f'Mapper{"s" if len(mapinfo["mappers"]) > 1 else ""}:', value= " | ".join(mapinfo["mappers"]))
         embed.add_field(name="Jump number:", value=mapinfo["jnumber"])
         embed.add_field(name="Level:", value=mapinfo["level"])
@@ -54,7 +59,7 @@ def getPlayersForEmbed(players : List[Player], emb : discord.Embed):
                         game.append(name)
             if (nbPlayers > 1):
                 s = "s"
-        emb.add_field(name=f"Player{s} Online:", value=f"{nbPlayers}", inline=False)
+        emb.add_field(name=f"Player{s} Online: {nbPlayers}", value="", inline=False)
         if(len(game) > 0):
             emb.add_field(name=f"In game:", value=f"{', '.join(game)}")
         if(len(spec) > 0):
@@ -65,15 +70,16 @@ def generateEmbedToprun(mapname, allRuns = True, bridgeConfig : BridgeConfig = N
     mapinfo = getToprunsInfo(mapname, bridgeConfig)
     emb = discord.Embed(
         color=discord.Color.from_str('0xff0000'),
-        title=f"{t} : {mapinfo['mapfilename']}"
+        title=f"{t} - {mapinfo['mapname']}"
     )
-    emb.set_author(name=f"{mapinfo['mapname']}", url = bridgeConfig.mappageUrl.format(mapinfo['mapid']))
     emb.set_thumbnail(url=bridgeConfig.logoUrl)
     space = "\u1CBC\u1CBC[...]"
     if mapinfo:
+        url = bridgeConfig.mappageUrl.format(mapinfo['mapid'])
+        emb.description = f'[{mapinfo["mapfilename"]}]({url})'
         runs = mapinfo["runs"]
         runsNumber = len(runs)
-        emb.description = f'Number of ways : {runsNumber}'
+        emb.add_field(name=f"Number of ways : {runsNumber}",value="")
         emb.set_image(url=bridgeConfig.levelshotUrl.format(mapinfo['mapfilename']))
         if (len(runs) > 0):
             for x in runs:
