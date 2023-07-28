@@ -29,7 +29,10 @@ def generateEmbed(mapname, mapinfos, players, bridgeConfig : BridgeConfig, updat
 
 def getMapInfosForEmbed(mapinfo, embed : discord.Embed, bridgeConfig : BridgeConfig, servername : str = ""):
     if mapinfo:
-        embed.title = f'{servername} - {mapinfo["mapname"]}'
+        if (servername == ""):
+            embed.title = f'{mapinfo["mapname"]}'
+        else:
+            embed.title = f'{servername} - {mapinfo["mapname"]}'
         url = bridgeConfig.mappageUrl.format(mapinfo['id']) 
         embed.description = f'[{mapinfo["filename"]}]({url})'
         embed.add_field(name=f'Mapper{"s" if len(mapinfo["mappers"]) > 1 else ""}:', value= " | ".join(mapinfo["mappers"]))

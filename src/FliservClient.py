@@ -88,7 +88,9 @@ class FliservClient(discord.Client):
                         channel = self.urt_discord_bridge.bridgeConfig.getChannel(currentMessage.serverAddress)
                         if (channel is not None):
                             if type(currentMessage) == DiscordMessageEmbed:
-                                await channel.send(embed=currentMessage.embed)
+                                players = self.urt_discord_bridge.bridgeConfig.serverAdressDict[currentMessage.serverAddress].players
+                                emb = generateEmbed(currentMessage.mapname, None, players, self.urt_discord_bridge.bridgeConfig)
+                                await channel.send(embed=emb)
                             elif (type(currentMessage == DiscordMessage)):
                                 await channel.send(convertMessage(currentMessage))
                 await asyncio.sleep(self.interval)

@@ -1,6 +1,7 @@
 import asyncio
 from typing import Tuple
 import discord
+from fastapi.responses import FileResponse
 import uvicorn
 
 from fastapi import FastAPI
@@ -9,7 +10,7 @@ from src.BridgeConfig import BridgeConfig
 from src.FliservClient import FliservClient
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import DiscordMessage
-from src.RequestObjects import DemoInfos, ServerInfos
+from src.RequestObjects import DemoInfos, DiscordMessageEmbed, ServerInfos
 
 ####################################### Discord Bot #######################################
 
@@ -46,6 +47,13 @@ async def sendMessage(message: DiscordMessage):
     print(bridge.messages.qsize())
     return message
 
+@app.post("/emb")
+async def sendMessageEmbed(message: DiscordMessageEmbed):
+    print(message)
+    bridge.addMessages(message)
+    print(bridge.messages.qsize())
+    return message
+
 @app.post("/demo")
 async def sendDemo(demo : DemoInfos):
     bridge.addDemos(demosInfos= demo)
@@ -56,6 +64,10 @@ async def sendDemo(demo : DemoInfos):
 async def updateServer(infos : ServerInfos):
     bridge.setServerInfo(infos)
     return infos
+
+# @app.get("/q3ut4/{name_file}")
+# async def getFile(name_file : str):
+#     return FileResponse(path=f"/home/antoine/dev/UrbanTerror_Discord_Bridge/test/{name_file}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=5000)

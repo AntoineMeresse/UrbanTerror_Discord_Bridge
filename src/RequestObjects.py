@@ -4,7 +4,6 @@ from pydantic import BaseModel
 class DiscordMessageEmbed(BaseModel):
     serverAddress : str
     mapname : str
-    embed : str
 
 class DiscordMessage(BaseModel):
     serverAddress : str
