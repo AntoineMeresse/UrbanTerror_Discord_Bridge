@@ -42,22 +42,17 @@ async def root():
 
 @app.post("/message")
 async def sendMessage(message: DiscordMessage):
-    print(message)
     bridge.addMessages(message)
-    print(bridge.messages.qsize())
     return message
 
 @app.post("/emb")
 async def sendMessageEmbed(message: DiscordMessageEmbed):
-    print(message)
     bridge.addMessages(message)
-    print(bridge.messages.qsize())
     return message
 
 @app.post("/demo")
 async def sendDemo(demo : DemoInfos):
     bridge.addDemos(demosInfos= demo)
-    print(bridge.demos)
     return demo
 
 @app.post("/server")

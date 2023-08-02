@@ -82,7 +82,6 @@ class FliservClient(discord.Client):
             while not self.is_closed():
                 queue = self.urt_discord_bridge.getListMessages()
                 while (not queue.empty()):
-                    print(f"Queue size : {queue.qsize()}")
                     with self.urt_discord_bridge.messagesLock:
                         currentMessage : Union[DiscordMessage, DiscordMessageEmbed] = queue.get(timeout=2)
                         channel = self.urt_discord_bridge.bridgeConfig.getChannel(currentMessage.serverAddress)
@@ -112,7 +111,7 @@ class FliservClient(discord.Client):
                     print(msg)
                     post : discord.Message = await channel.send(msg, file = discord.File(fp=demo.path, filename=demo.name))
                     if (serv_channel is not None):
-                        await serv_channel.send(f"{demo.chatMessage} -> {post.jump_url}")
+                        await serv_channel.send(f"{demo.chatMessage} {post.jump_url}")
                 await asyncio.sleep(self.interval)
         else:
             print("Could not find channel for demos")
