@@ -12,6 +12,8 @@ class BridgeConfig():
         self.discordKey : str = None
         self.demoChannelId : int = None
         self.statusChannelId : str = None
+        self.adminRole : int = None
+
         self.refresh : int = None
         self.logoUrl : str = None
 
@@ -35,6 +37,7 @@ class BridgeConfig():
             self.discordKey = datas['discordKey']
             self.demoChannelId = datas['demoChannelId']
             self.statusChannelId = datas['statusChannelId']
+            self.adminRole = datas['adminRole']
             self.refresh = datas['refreshInterval']
             self.logoUrl = datas['logo']
             for serv in datas['servers']:

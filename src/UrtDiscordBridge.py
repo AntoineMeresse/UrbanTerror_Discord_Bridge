@@ -50,7 +50,7 @@ class UrtDiscordBridge():
     def addDemos(self, demosInfos : DemoInfos) -> None:
         self.demos.put(demosInfos)
     
-    def getListDemos(self) -> Queue:
+    def getListDemos(self) -> Queue[DemoInfos]:
         return self.demos
         
     ###########################################################

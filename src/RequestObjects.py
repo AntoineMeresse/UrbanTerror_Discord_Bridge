@@ -17,6 +17,9 @@ class DemoInfos(BaseModel):
     name : str
     chatMessage : str
 
+    def __str__(self):
+        return f"{self.serverAddress} | {self.msg} | {self.path} | {self.name} | {self.chatMessage}"
+    
 class Player(BaseModel):
     name : str
     ingame : bool

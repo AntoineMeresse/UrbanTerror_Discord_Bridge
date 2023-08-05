@@ -1,3 +1,4 @@
 discord
 fastapi
 uvicorn[standard]
+requests

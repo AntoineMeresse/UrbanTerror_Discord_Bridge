@@ -2,3 +2,4 @@ __pycache__
 
 config/server_config.json
 test/test.py
+logs/

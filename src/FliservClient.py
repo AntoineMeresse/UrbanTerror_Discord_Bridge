@@ -2,6 +2,7 @@ import asyncio
 import datetime
 from typing import Any, List, Union
 import discord
+from lib.py3quake3 import PyQuake3
 from src.ServerButtons import ServerButtons
 from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
@@ -16,32 +17,43 @@ class FliservClient(discord.Client):
     async def on_ready(self):
         print("----------------> Bridge Online <----------------")
 
+    def getServInfos(self, channelId) -> str:
+        for serv in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
+            print(f"--> {serv.discordChannelId}")
+            if (serv.discordChannelId == channelId):
+                return serv.mapname, serv.players
+        return None,None
+    
+    def getRcon(self, channelId) -> PyQuake3:
+        if (channelId in self.urt_discord_bridge.bridgeConfig.channelIdDict):
+            return self.urt_discord_bridge.bridgeConfig.channelIdDict[channelId]
+        return None
+    
+    def messageAuthorHasRole(self, message, roleId) -> bool:
+        for role in message.author.roles:
+            if (role.id == roleId):
+                return True
+        return False
+
     async def on_message(self, message : discord.Message):
         msg = message.content
         msg_channelId = message.channel.id
         if (len(msg) > 0 and msg[0] == "!"):
             s = msg.split(" ")
             cmd = s[0]
-            mapname = None
-            if (len(s) == 2):
-                mapname = s[1]
-            if (not cmd in ["!topruns", "!mapinfos", "!mapinfo", "!top", "!status", "!help"]):
+            if (cmd == "!rcon" and len(s) >= 2):
+                if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
+                    args = " ".join(s[1:])
+                    pyQuake3 = self.getRcon(msg_channelId)
+                    if (pyQuake3 is not None):
+                        author = str(message.author).split("#")[0]
+                        pyQuake3.rcon(args)
+                        await message.channel.send(f"{author} has sent rcon command ({args}).")
+                    else:
+                        await message.channel.send("Please use it in the appropriate server bridge channel.")
+                else:
+                    await message.channel.send("You are not a [UJM] Admin")
                 return
-            if (mapname is None):
-                pass
-                # Voir en fonction du channelId
-            if (cmd == "!topruns"):
-                emb = generateEmbedToprun(mapname, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
-                await message.channel.send(embed=emb)
-            elif (cmd == "!top"):
-                emb = generateEmbedToprun(mapname, allRuns=False, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
-                await message.channel.send(embed=emb)
-            elif (cmd == "!mapinfos" or cmd == "!mapinfo"):
-                emb = generateEmbed(mapname, None, None, self.urt_discord_bridge.bridgeConfig)
-                await message.channel.send(embed=emb)
-            # if (cmd == "!status" and message.channel.id == self.channelId):
-            #     emb = self.urt_discord_bridge.generateEmbedWithCurrentInfos()
-            #     await message.channel.send(embed=emb)
             elif (cmd == "!help"):
                 cmds = [
                     "Available commands :",
@@ -51,6 +63,29 @@ class FliservClient(discord.Client):
                     "   |-> !status : To display latest server status (Only in #fliro-bridge)",
                 ]
                 await message.channel.send(discordBlock(cmds))
+                return
+            mapname = None
+            players = None
+            if (len(s) == 2):
+                mapname : str = s[1]
+                mapname = mapname.strip()
+            if (mapname is None):
+                mapname, players = self.getServInfos(msg_channelId)
+                print(mapname)
+                print(players)
+            if (mapname is not None and mapname != ""):
+                if (cmd == "!topruns"):
+                    emb = generateEmbedToprun(mapname, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
+                    await message.channel.send(embed=emb)
+                elif (cmd == "!top"):
+                    emb = generateEmbedToprun(mapname, allRuns=False, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
+                    await message.channel.send(embed=emb)
+                elif (cmd == "!mapinfos" or cmd == "!mapinfo"):
+                    emb = generateEmbed(mapname, None, None, self.urt_discord_bridge.bridgeConfig)
+                    await message.channel.send(embed=emb)
+                elif (cmd == "!status"):
+                    emb = generateEmbed(mapname, None, players, self.urt_discord_bridge.bridgeConfig)
+                    await message.channel.send(embed=emb)
         elif (message.author.bot):
             return
         else:
@@ -89,9 +124,20 @@ class FliservClient(discord.Client):
                             if type(currentMessage) == DiscordMessageEmbed:
                                 players = self.urt_discord_bridge.bridgeConfig.serverAdressDict[currentMessage.serverAddress].players
                                 emb = generateEmbed(currentMessage.mapname, None, players, self.urt_discord_bridge.bridgeConfig)
-                                await channel.send(embed=emb)
+                                try:
+                                    async with asyncio.timeout(10):
+                                        await channel.send(embed=emb)
+                                except asyncio.TimeoutError:
+                                    with open("logs/sendEmbed_errors.txt", "a+") as fl:
+                                        fl.write(f"{datetime.datetime.now()} | Error to send embed change map for : {currentMessage.mapname} (server : {currentMessage.serverAddress})\n\n") 
                             elif (type(currentMessage == DiscordMessage)):
-                                await channel.send(convertMessage(currentMessage))
+                                msg = convertMessage(currentMessage)
+                                try:
+                                    async with asyncio.timeout(10):
+                                        await channel.send(msg)
+                                except asyncio.TimeoutError:
+                                    with open("logs/sendMessage_errors.txt", "a+") as fl:
+                                        fl.write(f"{datetime.datetime.now()} | Error to send message : {msg} (server : {currentMessage.serverAddress})\n\n") 
                 await asyncio.sleep(self.interval)
         else:
             print("There was no valid channels found.")
@@ -108,10 +154,14 @@ class FliservClient(discord.Client):
                     msg = demo.msg
                     if (serv_channel is not None):
                         msg += f"({serv_channel.jump_url})"
-                    print(msg)
-                    post : discord.Message = await channel.send(msg, file = discord.File(fp=demo.path, filename=demo.name))
-                    if (serv_channel is not None):
-                        await serv_channel.send(f"{demo.chatMessage} {post.jump_url}")
+                    try:
+                        async with asyncio.timeout(10):
+                            post : discord.Message = await channel.send(msg, file = discord.File(fp=demo.path, filename=demo.name))
+                            if (serv_channel is not None):
+                                await serv_channel.send(f"{demo.chatMessage} {post.jump_url}")
+                    except asyncio.TimeoutError:
+                        with open("logs/sendDemoRuns_errors.txt", "a+") as fl:
+                            fl.write(f"{datetime.datetime.now()} | Error uploading demo on discord : {demo}\n\n")    
                 await asyncio.sleep(self.interval)
         else:
             print("Could not find channel for demos")
@@ -131,9 +181,14 @@ class FliservClient(discord.Client):
     async def updateStatusServers(self):
         for x in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
             if (x.status is not None):
-                emb = generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
+                try:
+                    emb = generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
                                     servername=x.servername)
-                await x.status.edit(embed=emb, view=ServerButtons(x.mapname, self.urt_discord_bridge.bridgeConfig))
+                    async with asyncio.timeout(10):
+                        await x.status.edit(embed=emb, view=ServerButtons(x.mapname, self.urt_discord_bridge.bridgeConfig))
+                except asyncio.TimeoutError:
+                    with open("logs/updateStatusServers_errors.txt", "a+") as fl:
+                        fl.write(f"{datetime.datetime.now()} | Error to update map {x.mapname} ({x.address}) for messageId : {x.status.id}\n")
 
     async def set_discord_server_infos_task(self):
         await self.wait_until_ready()
