@@ -12,10 +12,16 @@ from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import DiscordMessage
 from src.RequestObjects import DemoInfos, DiscordMessageEmbed, ServerInfos
 
+import sys
+
 ####################################### Discord Bot #######################################
 
 def initDiscordBot() -> Tuple[BridgeConfig, UrtDiscordBridge, FliservClient]:
-    bridgeConfig : BridgeConfig = BridgeConfig("config/server_config.json")
+    args = sys.argv
+    if (len(args) < 2):
+        print("Specify a correct path for config file.")
+        exit()
+    bridgeConfig : BridgeConfig = BridgeConfig(sys.argv[1])
     print(bridgeConfig)
 
     bridge : UrtDiscordBridge = UrtDiscordBridge(bridgeConfig=bridgeConfig)
