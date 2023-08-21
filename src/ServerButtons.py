@@ -9,11 +9,14 @@ class ServerButtons(discord.ui.View):
         super().__init__()
         self.mapname = mapname
         self.bridgeConfig : BridgeConfig = bridgeConfig
+        self.delayInSecondsBeforeDelete = 30
 
     @discord.ui.button(label="Top", style=discord.ButtonStyle.secondary, emoji="🥇")
     async def topInfoButton(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message(embed=generateEmbedToprun(self.mapname, False, self.bridgeConfig), ephemeral=True, delete_after=10)    
+        emb = await generateEmbedToprun(self.mapname, False, self.bridgeConfig)
+        await interaction.response.send_message(embed=emb, ephemeral=True, delete_after=30)    
 
     @discord.ui.button(label="Topruns", style=discord.ButtonStyle.secondary, emoji="🏆")
     async def toprunInfoButton(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message(embed=generateEmbedToprun(self.mapname, True, self.bridgeConfig), ephemeral=True, delete_after=10)
+        emb = await generateEmbedToprun(self.mapname, True, self.bridgeConfig)
+        await interaction.response.send_message(embed=emb, ephemeral=True, delete_after=30)

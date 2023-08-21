@@ -1,23 +1,22 @@
-import requests
+import aiohttp
 
 from src.BridgeConfig import BridgeConfig
 
-def getApiInfos(mapName, url, apikey):
-    if (mapName != ""):
+async def getApiInfos(mapName, url, apikey):
+    if (mapName is not None and mapName != ""):
         url = url
         p = {
             "mapname" : mapName,
             "apikey": apikey
         }
-        res = requests.post(url, json = p, timeout=2)
-        try:
-            return res.json()
-        except:
-            return None
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=2)) as session:
+            async with session.post(url=url, json=p) as response:
+                res = await response.json()
+                return res
     return None
 
-def getMapInfo(mapName, bridgeConfig : BridgeConfig):
-    return getApiInfos(mapName, bridgeConfig.mapinfoUrl, bridgeConfig.apikey)
+async def getMapInfo(mapName, bridgeConfig : BridgeConfig):
+    return await getApiInfos(mapName, bridgeConfig.mapinfoUrl, bridgeConfig.apikey)
 
-def getToprunsInfo(mapName, bridgeConfig : BridgeConfig):
-    return getApiInfos(mapName, bridgeConfig.toprunsUrl, bridgeConfig.apikey)
+async def getToprunsInfo(mapName, bridgeConfig : BridgeConfig):
+    return await getApiInfos(mapName, bridgeConfig.toprunsUrl, bridgeConfig.apikey)

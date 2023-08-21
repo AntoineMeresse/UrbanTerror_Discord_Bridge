@@ -9,15 +9,15 @@ from src.BridgeConfig import BridgeConfig
 
 from src.RequestObjects import DiscordMessage, Player
 
-def generateEmbed(mapname, mapinfos, players, bridgeConfig : BridgeConfig, updated : datetime = None, servername : str = "") -> discord.Embed:
+async def generateEmbed(mapname, mapinfos, players, bridgeConfig : BridgeConfig, updated : datetime = None, servername : str = "") -> discord.Embed:
     emb = discord.Embed(
         color=discord.Color.from_str('0xff0000'),
         title=f"{servername}"
     )
 
     if (mapinfos is None):
-        mapinfos = getMapInfo(mapname, bridgeConfig) 
-  
+        mapinfos = await getMapInfo(mapname, bridgeConfig) 
+        
     getMapInfosForEmbed(mapinfos, emb, bridgeConfig, servername)
     if (players is not None):
         getPlayersForEmbed(players, emb)
@@ -68,9 +68,9 @@ def getPlayersForEmbed(players : List[Player], emb : discord.Embed):
         if(len(spec) > 0):
             emb.add_field(name=f"In spec:", value=f"{', '.join(spec)}")
 
-def generateEmbedToprun(mapname, allRuns = True, bridgeConfig : BridgeConfig = None) -> discord.Embed:
+async def generateEmbedToprun(mapname, allRuns = True, bridgeConfig : BridgeConfig = None) -> discord.Embed:
     t = "Topruns" if allRuns else "Top"
-    mapinfo = getToprunsInfo(mapname, bridgeConfig)
+    mapinfo = await getToprunsInfo(mapname, bridgeConfig)
     emb = discord.Embed(
         color=discord.Color.from_str('0xff0000'),
         title=f"{t} - {mapinfo['mapname']}"

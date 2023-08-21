@@ -7,7 +7,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from src.BridgeConfig import BridgeConfig
-from src.FliservClient import FliservClient
+from src.DiscordClient import DiscordClient
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import DiscordMessage
 from src.RequestObjects import DemoInfos, DiscordMessageEmbed, ServerInfos
@@ -16,7 +16,7 @@ import sys
 
 ####################################### Discord Bot #######################################
 
-def initDiscordBot() -> Tuple[BridgeConfig, UrtDiscordBridge, FliservClient]:
+def initDiscordBot() -> Tuple[BridgeConfig, UrtDiscordBridge, DiscordClient]:
     args = sys.argv
     if (len(args) < 2):
         print("Specify a correct path for config file.")
@@ -28,7 +28,7 @@ def initDiscordBot() -> Tuple[BridgeConfig, UrtDiscordBridge, FliservClient]:
 
     intents = discord.Intents.default()
     intents.message_content = True
-    return bridgeConfig, bridge, FliservClient(intents=intents, urt_discord_bridge=bridge)
+    return bridgeConfig, bridge, DiscordClient(intents=intents, urt_discord_bridge=bridge)
 
 bridgeConfig, bridge, bot = initDiscordBot() 
 

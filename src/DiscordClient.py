@@ -7,12 +7,15 @@ from src.ServerButtons import ServerButtons
 from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import convertMessage, discordBlock, generateEmbed, generateEmbedToprun
+import os
 
-class FliservClient(discord.Client):
+class DiscordClient(discord.Client):
     def __init__(self, *, intents: discord.Intents, urt_discord_bridge = None, **options: Any) -> None:
         super().__init__(intents=intents, **options)
         self.urt_discord_bridge : UrtDiscordBridge = urt_discord_bridge
         self.interval = self.urt_discord_bridge.bridgeConfig.refresh
+        if not os.path.exists('logs'):
+            os.makedirs('logs')
 
     async def on_ready(self):
         print("----------------> Bridge Online <----------------")
@@ -52,7 +55,13 @@ class FliservClient(discord.Client):
                     else:
                         await message.channel.send("Please use it in the appropriate server bridge channel.")
                 else:
-                    await message.channel.send("You are not a [UJM] Admin")
+                    await message.channel.send("You are not an [UJM] Admin")
+                return
+            elif (cmd == "!restart"):
+                if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
+                    pass
+                else:
+                    await message.channel.send("You are not an [UJM] Admin")
                 return
             elif (cmd == "!help"):
                 cmds = [
@@ -74,17 +83,17 @@ class FliservClient(discord.Client):
                 print(mapname)
                 print(players)
             if (mapname is not None and mapname != ""):
-                if (cmd == "!topruns"):
-                    emb = generateEmbedToprun(mapname, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
+                if (cmd in ["!topruns", "!tr"]):
+                    emb = await generateEmbedToprun(mapname, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
                     await message.channel.send(embed=emb)
                 elif (cmd == "!top"):
-                    emb = generateEmbedToprun(mapname, allRuns=False, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
+                    emb = await generateEmbedToprun(mapname, allRuns=False, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
                     await message.channel.send(embed=emb)
                 elif (cmd == "!mapinfos" or cmd == "!mapinfo"):
-                    emb = generateEmbed(mapname, None, None, self.urt_discord_bridge.bridgeConfig)
+                    emb = await generateEmbed(mapname, None, None, self.urt_discord_bridge.bridgeConfig)
                     await message.channel.send(embed=emb)
                 elif (cmd == "!status"):
-                    emb = generateEmbed(mapname, None, players, self.urt_discord_bridge.bridgeConfig)
+                    emb = await generateEmbed(mapname, None, players, self.urt_discord_bridge.bridgeConfig)
                     await message.channel.send(embed=emb)
         elif (message.author.bot):
             return
@@ -123,7 +132,7 @@ class FliservClient(discord.Client):
                         if (channel is not None):
                             if type(currentMessage) == DiscordMessageEmbed:
                                 players = self.urt_discord_bridge.bridgeConfig.serverAdressDict[currentMessage.serverAddress].players
-                                emb = generateEmbed(currentMessage.mapname, None, players, self.urt_discord_bridge.bridgeConfig)
+                                emb = await generateEmbed(currentMessage.mapname, None, players, self.urt_discord_bridge.bridgeConfig)
                                 try:
                                     async with asyncio.timeout(10):
                                         await channel.send(embed=emb)
@@ -174,15 +183,14 @@ class FliservClient(discord.Client):
         
     async def initStatusMessage(self, channel : discord.TextChannel):
         for x in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
-            emb = generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, servername=x.servername)
-            x.status = await channel.send(embed=emb,
-                                          view=ServerButtons(x.mapname, self.urt_discord_bridge.bridgeConfig))
-    
+            emb = await generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, servername=x.servername)
+            x.status = await channel.send(embed=emb, content="test")
+                                        #   view=ServerButtons(x.mapname, self.urt_discord_bridge.bridgeConfig))
     async def updateStatusServers(self):
         for x in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
             if (x.status is not None):
                 try:
-                    emb = generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
+                    emb = await generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
                                     servername=x.servername)
                     async with asyncio.timeout(10):
                         await x.status.edit(embed=emb, view=ServerButtons(x.mapname, self.urt_discord_bridge.bridgeConfig))
