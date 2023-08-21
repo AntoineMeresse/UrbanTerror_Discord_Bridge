@@ -9,22 +9,39 @@ from src.BridgeConfig import BridgeConfig
 
 from src.RequestObjects import DiscordMessage, Player
 
-async def generateEmbed(mapname, mapinfos, players, bridgeConfig : BridgeConfig, updated : datetime = None, servername : str = "") -> discord.Embed:
+async def generateEmbed(mapname, mapinfos, players, bridgeConfig : BridgeConfig, updated : datetime = None, servername : str = "", 
+                        servAvailable : bool = True, connectMessage : str = None) -> discord.Embed:
     emb = discord.Embed(
         color=discord.Color.from_str('0xff0000'),
         title=f"{servername}"
     )
 
-    if (mapinfos is None):
-        mapinfos = await getMapInfo(mapname, bridgeConfig) 
-        
-    getMapInfosForEmbed(mapinfos, emb, bridgeConfig, servername)
-    if (players is not None):
-        getPlayersForEmbed(players, emb)
-
     if (updated is not None):
         emb.timestamp = updated
         emb.set_footer(text='\u200b', icon_url="https://www.iconsdb.com/icons/preview/soylent-red/sinchronize-xxl.png")
+
+    if (not servAvailable):
+        emb.title = f"{servername}"
+        emb.set_image(url="https://media.tenor.com/u7LmCHI89N8AAAAd/server-offline.gif")
+        text = f"```yaml\nAsk someone with UJM Admin role to :\n- Go in {servername.lower()}-bridge\n- !restart\n```"
+        emb.add_field(name="What to do ?", value=text)
+        return emb
+    else:
+        if mapname is not None and mapname != "":
+            emb.title = f"{servername} - {mapname}"
+
+    if (mapinfos is None):
+        mapinfos = await getMapInfo(mapname, bridgeConfig) 
+
+    getMapInfosForEmbed(mapinfos, emb, bridgeConfig, servername)
+    
+    if (players is not None):
+        getPlayersForEmbed(players, emb)
+
+    if (connectMessage is not None):
+        text = f"```css\n{connectMessage}\n```"
+        emb.add_field(name="Join this server:", value=text, inline=False)
+
     return emb
 
 def getMapInfosForEmbed(mapinfo, embed : discord.Embed, bridgeConfig : BridgeConfig, servername : str = ""):
@@ -62,7 +79,7 @@ def getPlayersForEmbed(players : List[Player], emb : discord.Embed):
                         game.append(name)
             if (nbPlayers > 1):
                 s = "s"
-        emb.add_field(name=f"Player{s} Online: {nbPlayers}", value="", inline=False)
+        emb.add_field(name=f"Player{s} Online:   `{nbPlayers} / 24`", value="", inline=False)
         if(len(game) > 0):
             emb.add_field(name=f"In game:", value=f"{', '.join(game)}")
         if(len(spec) > 0):

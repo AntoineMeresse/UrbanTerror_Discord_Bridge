@@ -1,13 +1,16 @@
 import asyncio
 import datetime
-from typing import Any, List, Union
+import os
+import subprocess
 import discord
+
+from typing import Any, Union
 from lib.py3quake3 import PyQuake3
 from src.ServerButtons import ServerButtons
 from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import convertMessage, discordBlock, generateEmbed, generateEmbedToprun
-import os
+from src.ApiCalls import getServerStatus
 
 class DiscordClient(discord.Client):
     def __init__(self, *, intents: discord.Intents, urt_discord_bridge = None, **options: Any) -> None:
@@ -30,6 +33,11 @@ class DiscordClient(discord.Client):
     def getRcon(self, channelId) -> PyQuake3:
         if (channelId in self.urt_discord_bridge.bridgeConfig.channelIdDict):
             return self.urt_discord_bridge.bridgeConfig.channelIdDict[channelId]
+        return None
+    
+    def getRestart(self, channelId) -> str:
+        if (channelId in self.urt_discord_bridge.bridgeConfig.restartWithChannelId):
+            return self.urt_discord_bridge.bridgeConfig.restartWithChannelId[channelId]
         return None
     
     def messageAuthorHasRole(self, message, roleId) -> bool:
@@ -59,7 +67,18 @@ class DiscordClient(discord.Client):
                 return
             elif (cmd == "!restart"):
                 if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
-                    pass
+                    restart_cmd = self.getRestart(msg_channelId)
+                    if (restart_cmd is not None):
+                        subprocess.Popen(restart_cmd, shell=True, preexec_fn=os.setpgrp)
+                        statusChannel = self.get_channel(self.urt_discord_bridge.bridgeConfig.statusChannelId)
+                        msg = "Server restarted."
+                        if (statusChannel is not None):
+                            url = statusChannel.jump_url
+                            if (url):
+                               msg = f"Server restarted. Check status in {url}"
+                        await message.channel.send(msg)                        
+                    else:
+                        await message.channel.send("No restart command provided for this server.")
                 else:
                     await message.channel.send("You are not an [UJM] Admin")
                 return
@@ -183,20 +202,21 @@ class DiscordClient(discord.Client):
         
     async def initStatusMessage(self, channel : discord.TextChannel):
         for x in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
-            emb = await generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, servername=x.servername)
-            x.status = await channel.send(embed=emb, content="test")
-                                        #   view=ServerButtons(x.mapname, self.urt_discord_bridge.bridgeConfig))
+            emb = await generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, servername=x.servername, servAvailable=False)
+            x.status = await channel.send(embed=emb)
+                                      
     async def updateStatusServers(self):
-        for x in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
-            if (x.status is not None):
+        for serv in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
+            if (serv.status is not None):
                 try:
-                    emb = await generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
-                                    servername=x.servername)
                     async with asyncio.timeout(10):
-                        await x.status.edit(embed=emb, view=ServerButtons(x.mapname, self.urt_discord_bridge.bridgeConfig))
+                        available = await getServerStatus(serv.address)
+                        emb = await generateEmbed(serv.mapname, None, serv.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
+                                    servername=serv.servername, servAvailable=available, connectMessage=f"/connect {serv.address}")
+                        await serv.status.edit(embed=emb, view=ServerButtons(serv.mapname, self.urt_discord_bridge.bridgeConfig))
                 except asyncio.TimeoutError:
                     with open("logs/updateStatusServers_errors.txt", "a+") as fl:
-                        fl.write(f"{datetime.datetime.now()} | Error to update map {x.mapname} ({x.address}) for messageId : {x.status.id}\n")
+                        fl.write(f"{datetime.datetime.now()} | Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
 
     async def set_discord_server_infos_task(self):
         await self.wait_until_ready()

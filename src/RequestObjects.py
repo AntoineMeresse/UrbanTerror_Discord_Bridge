@@ -24,7 +24,11 @@ class Player(BaseModel):
     name : str
     ingame : bool
     running : bool
+
 class ServerInfos(BaseModel):
     serverAddress : str
     playersList: Union[List[Player], None]
     mapname: Union[str, None]
+
+class PingInfos(BaseModel):
+    serverAddress : str

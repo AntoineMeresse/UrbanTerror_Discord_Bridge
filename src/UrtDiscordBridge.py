@@ -2,13 +2,8 @@ from queue import Queue
 import textwrap
 from threading import RLock
 
-import discord
-
 from src.RequestObjects import DemoInfos, DiscordMessage, ServerInfos
 from src.BridgeConfig import BridgeConfig
-
-from src.utils import generateEmbed
-
 
 class UrtDiscordBridge():
 

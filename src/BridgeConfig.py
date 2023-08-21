@@ -3,6 +3,7 @@ import json
 
 from lib.py3quake3 import PyQuake3
 from src.UrtDiscordServer import UrtDiscordServer
+from src.RequestObjects import PingInfos
 
 class BridgeConfig():
 
@@ -26,6 +27,7 @@ class BridgeConfig():
         
         self.serverAdressDict : Dict[str, UrtDiscordServer] = dict()
         self.channelIdDict : Dict[int, PyQuake3] = dict()
+        self.restartWithChannelId : Dict[int, str] = dict()
 
         self.loadConfig()
 
@@ -59,8 +61,11 @@ class BridgeConfig():
         discordChannelId = serverInfos["channelId"]
         address = f"{ip}:{port}"
 
-        self.serverAdressDict[address] = UrtDiscordServer(address, discordChannelId, servername) 
+        self.serverAdressDict[address] = UrtDiscordServer(address, discordChannelId, servername, rconpassword=rconpassword) 
         self.channelIdDict[discordChannelId] = PyQuake3(address, rconpassword)
+        
+        if ("restart" in serverInfos):
+            self.restartWithChannelId[discordChannelId] = serverInfos["restart"]
 
     def getChannel(self, serverAdress):
         # print(f"Get channel for : {serverAdress}")
@@ -80,5 +85,23 @@ class BridgeConfig():
             res += f"\n|-----------> {self.serverAdressDict[server]}"
         res += "\n============================================================================"
         return res
+    
+    def isServerStatusOk(self, infos : PingInfos) -> bool:
+        if (infos.serverAddress in self.serverAdressDict):
+            server : UrtDiscordServer = self.serverAdressDict[infos.serverAddress]
+            if server.discordChannelId in self.channelIdDict:
+                pyQuake3 = self.channelIdDict[server.discordChannelId]
+                try:
+                    status = pyQuake3.rcon("status")
+                    if (server.mapname is None):
+                        try:
+                            servMap : str = status[1].split("\n")[0].split("map: ")[1].strip()
+                            server.mapname = servMap
+                        except:
+                            pass
+                    return True
+                except:
+                   pass
+        return False
 
 

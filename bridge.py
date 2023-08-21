@@ -10,7 +10,7 @@ from src.BridgeConfig import BridgeConfig
 from src.DiscordClient import DiscordClient
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import DiscordMessage
-from src.RequestObjects import DemoInfos, DiscordMessageEmbed, ServerInfos
+from src.RequestObjects import DemoInfos, DiscordMessageEmbed, PingInfos, ServerInfos
 
 import sys
 
@@ -21,6 +21,7 @@ def initDiscordBot() -> Tuple[BridgeConfig, UrtDiscordBridge, DiscordClient]:
     if (len(args) < 2):
         print("Specify a correct path for config file.")
         exit()
+    # bridgeConfig : BridgeConfig = BridgeConfig("config/server_config.json")
     bridgeConfig : BridgeConfig = BridgeConfig(sys.argv[1])
     print(bridgeConfig)
 
@@ -70,6 +71,10 @@ async def updateServer(infos : ServerInfos):
 async def mapSync():
     bridge.mapSync()
     return "Map sync : ok"
+
+@app.post("/server-status")
+async def isServerOk(infos : PingInfos) -> bool:
+    return bridge.bridgeConfig.isServerStatusOk(infos)
 
 # @app.get("/q3ut4/{name_file}")
 # async def getFile(name_file : str):

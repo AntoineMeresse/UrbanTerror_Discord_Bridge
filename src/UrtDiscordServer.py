@@ -4,8 +4,9 @@ from src.RequestObjects import Player
 
 class UrtDiscordServer():
 
-    def __init__(self, address : str, discordChannelId : int, servername : str = "Server") -> None:
+    def __init__(self, address : str, discordChannelId : int, servername : str = "Server", rconpassword : str = "") -> None:
         self.address : str = address
+        self.rconpassword = rconpassword
         self.discordChannelId = discordChannelId
         
         self.channel : Optional[Union[discord.GuildChannel, discord.Thread, discord.PrivateChannel]] = None

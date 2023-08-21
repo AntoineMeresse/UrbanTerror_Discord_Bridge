@@ -58,6 +58,7 @@ class PyQuake3(object):
     address = None
     players = None
     values = None
+    fullAddress = None
 
     def __init__(self, server, rcon_password=''):
         """
@@ -67,11 +68,15 @@ class PyQuake3(object):
         self.set_server(server)
         self.set_rcon_password(rcon_password)
 
+    def restart_server(self):
+        self.set_server(self.fullAddress)
+
     def set_server(self, server):
         """
         set IP address and port and connect to socket
         """
         try:
+            self.fullAddress = server
             self.address, self.port = server.split(':')
         except ValueError:
             raise ValueError('Server address format must be: "address:port"')
