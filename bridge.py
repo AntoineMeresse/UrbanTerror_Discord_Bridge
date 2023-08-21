@@ -66,6 +66,11 @@ async def updateServer(infos : ServerInfos):
     bridge.setServerInfo(infos)
     return infos
 
+@app.post("/mapsync")
+async def mapSync():
+    bridge.mapSync()
+    return "Map sync : ok"
+
 # @app.get("/q3ut4/{name_file}")
 # async def getFile(name_file : str):
 #     return FileResponse(path=f"/home/antoine/dev/UrbanTerror_Discord_Bridge/test/{name_file}")

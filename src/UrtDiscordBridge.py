@@ -65,17 +65,12 @@ class UrtDiscordBridge():
                         serverInfo.mapname = infos.mapname
                     return
 
-    # def getCurrentMap(self):
-    #     if (self.currentMap is not None and self.currentMap != ""):
-    #         return self.currentMap
-    #     return "Urban Terror"
-    
-    # def setPlayers(self, players):
-    #     self.players = players
-
-    # def setMapinfos(self, infos):
-    #     self.mapinfos = infos
-    
-    # def generateEmbedWithCurrentInfos(self) -> discord.Embed:
-    #     return generateEmbed(self.currentMap, self.mapinfos, self.players)
+    def mapSync(self):
+        for server in self.bridgeConfig.channelIdDict.values():
+            try:
+                server.rcon("reloadMaps")
+                print(f"{server.address}:{server.port} | Reloadmaps OK")
+                server.rcon("Maps have been reloaded.")
+            except:
+                print(f"{server.address}:{server.port} | Reloadmaps KO (Server probably down)")
    
