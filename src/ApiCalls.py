@@ -25,7 +25,7 @@ async def getToprunsInfo(mapName, bridgeConfig : BridgeConfig):
     return await getApiInfos(mapName, bridgeConfig.toprunsUrl, bridgeConfig.apikey)
 
 async def getServerStatus(address : str):
-    url = "http://localhost:5000/server-status"
+    url = "http://localhost:5000/local/server-status"
     p = {
         "serverAddress" : address
     }

@@ -24,6 +24,12 @@ class BridgeConfig():
         self.mapinfoUrl : str = None
         self.mappageUrl : str = None
         self.levelshotUrl : str = None
+
+        self.mapfolder : str = None
+        self.mapUploadChannelId : int = None
+
+        self.url : str = None
+        self.port : int = None
         
         self.serverAdressDict : Dict[str, UrtDiscordServer] = dict()
         self.channelIdDict : Dict[int, PyQuake3] = dict()
@@ -51,7 +57,12 @@ class BridgeConfig():
             self.mapinfoUrl = datas['api']['urls']['mapinfo']
             self.mappageUrl = datas['api']['urls']['mappage']
             self.levelshotUrl = datas['api']['urls']['levelshot']
-            
+
+            self.mapfolder = datas['mapfolder']
+            self.mapUploadChannelId = datas['mapUploadChannelId']
+
+            self.url = datas['uvicorn']['url']
+            self.port = datas['uvicorn']['port']
 
     def addServer(self, serverInfos : Dict):
         servername = serverInfos["name"]

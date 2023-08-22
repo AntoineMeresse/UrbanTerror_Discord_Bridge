@@ -3,6 +3,7 @@ import datetime
 import os
 import subprocess
 import discord
+import zipfile
 
 from typing import Any, Union
 from lib.py3quake3 import PyQuake3
@@ -45,75 +46,110 @@ class DiscordClient(discord.Client):
             if (role.id == roleId):
                 return True
         return False
+    
+    async def on_message_handle_commands(self, message: discord.Message, msg, msg_channelId):
+        s = msg.split(" ")
+        cmd = s[0]
+        if (cmd == "!rcon" and len(s) >= 2):
+            if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
+                args = " ".join(s[1:])
+                pyQuake3 = self.getRcon(msg_channelId)
+                if (pyQuake3 is not None):
+                    author = str(message.author).split("#")[0]
+                    pyQuake3.rcon(args)
+                    await message.channel.send(f"{author} has sent rcon command ({args}).")
+                else:
+                    await message.channel.send("Please use it in the appropriate server bridge channel.")
+            else:
+                await message.channel.send("You are not an [UJM] Admin")
+            return
+        elif (cmd == "!restart"):
+            if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
+                restart_cmd = self.getRestart(msg_channelId)
+                if (restart_cmd is not None):
+                    subprocess.Popen(restart_cmd, shell=True, preexec_fn=os.setpgrp)
+                    statusChannel = self.get_channel(self.urt_discord_bridge.bridgeConfig.statusChannelId)
+                    restart_message = "Server restarted."
+                    if (statusChannel is not None):
+                        url = statusChannel.jump_url
+                        if (url):
+                            restart_message = f"Server restarted. Check status in {url}"
+                    await message.channel.send(restart_message)                        
+                else:
+                    await message.channel.send("No restart command provided for this server.")
+            else:
+                await message.channel.send("You are not an [UJM] Admin")
+            return
+        elif (cmd == "!help"):
+            cmds = [
+                "Available commands :",
+                "   |-> !mapinfos or !mapinfo : To get map infos",
+                "   |-> !topruns : To get all runs for a given map",
+                "   |-> !top : To get only best runs for a given map",
+                "   |-> !status : To display latest server status (Only in #fliro-bridge)",
+            ]
+            await message.channel.send(discordBlock(cmds))
+            return
+        mapname = None
+        players = None
+        if (len(s) == 2):
+            mapname : str = s[1]
+            mapname = mapname.strip()
+        if (mapname is None):
+            mapname, players = self.getServInfos(msg_channelId)
+            print(mapname)
+            print(players)
+        if (mapname is not None and mapname != ""):
+            if (cmd in ["!topruns", "!tr"]):
+                emb = await generateEmbedToprun(mapname, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
+                await message.channel.send(embed=emb)
+            elif (cmd == "!top"):
+                emb = await generateEmbedToprun(mapname, allRuns=False, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
+                await message.channel.send(embed=emb)
+            elif (cmd == "!mapinfos" or cmd == "!mapinfo"):
+                emb = await generateEmbed(mapname, None, None, self.urt_discord_bridge.bridgeConfig)
+                await message.channel.send(embed=emb)
+            elif (cmd == "!status"):
+                emb = await generateEmbed(mapname, None, players, self.urt_discord_bridge.bridgeConfig)
+                await message.channel.send(embed=emb)
 
+    async def on_message_handle_fileUpload(self, message: discord.Message, msg_channelId):
+        if (msg_channelId == self.urt_discord_bridge.bridgeConfig.mapUploadChannelId):
+            print("Upload")
+            attachements = message.attachments
+            msg = message.content
+            for uploadedFile in attachements:
+                filename = uploadedFile.filename
+                if (filename.endswith(".pk3")): 
+                    path = f"{self.urt_discord_bridge.bridgeConfig.mapfolder}/{filename}"
+                    file_exists = os.path.isfile(path)
+                    replace = "replace" in msg.lower()
+                    if (file_exists and not replace):
+                        await message.channel.send(f"{filename} is already on the repository.```yaml\nIf you want to replace it :\n - Upload it again with 'replace' in the message\n```") 
+                    else:
+                        await uploadedFile.save(path)
+                        with zipfile.ZipFile(path, 'r') as zip_file:
+                            file_list = zip_file.namelist()
+                            bspname = filename.replace(".pk3", ".bsp")
+                            bsppath = f"maps/{bspname}"
+                            if (bsppath in file_list):
+                                if (replace):
+                                    await message.channel.send(f"{filename} has been updated.") 
+                                else:
+                                    await message.channel.send(f"{filename} has been successfuly uploaded.") 
+                            else:
+                                await message.channel.send(f"{filename} has not been uploaded.\n`{bsppath}` missing inside the pk3.") 
+                else:
+                    await message.channel.send("Please provide a pk3 file")   
+                    
     async def on_message(self, message : discord.Message):
         msg = message.content
         msg_channelId = message.channel.id
+        
+        await self.on_message_handle_fileUpload(message, msg_channelId)
+
         if (len(msg) > 0 and msg[0] == "!"):
-            s = msg.split(" ")
-            cmd = s[0]
-            if (cmd == "!rcon" and len(s) >= 2):
-                if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
-                    args = " ".join(s[1:])
-                    pyQuake3 = self.getRcon(msg_channelId)
-                    if (pyQuake3 is not None):
-                        author = str(message.author).split("#")[0]
-                        pyQuake3.rcon(args)
-                        await message.channel.send(f"{author} has sent rcon command ({args}).")
-                    else:
-                        await message.channel.send("Please use it in the appropriate server bridge channel.")
-                else:
-                    await message.channel.send("You are not an [UJM] Admin")
-                return
-            elif (cmd == "!restart"):
-                if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
-                    restart_cmd = self.getRestart(msg_channelId)
-                    if (restart_cmd is not None):
-                        subprocess.Popen(restart_cmd, shell=True, preexec_fn=os.setpgrp)
-                        statusChannel = self.get_channel(self.urt_discord_bridge.bridgeConfig.statusChannelId)
-                        msg = "Server restarted."
-                        if (statusChannel is not None):
-                            url = statusChannel.jump_url
-                            if (url):
-                               msg = f"Server restarted. Check status in {url}"
-                        await message.channel.send(msg)                        
-                    else:
-                        await message.channel.send("No restart command provided for this server.")
-                else:
-                    await message.channel.send("You are not an [UJM] Admin")
-                return
-            elif (cmd == "!help"):
-                cmds = [
-                    "Available commands :",
-                    "   |-> !mapinfos or !mapinfo : To get map infos",
-                    "   |-> !topruns : To get all runs for a given map",
-                    "   |-> !top : To get only best runs for a given map",
-                    "   |-> !status : To display latest server status (Only in #fliro-bridge)",
-                ]
-                await message.channel.send(discordBlock(cmds))
-                return
-            mapname = None
-            players = None
-            if (len(s) == 2):
-                mapname : str = s[1]
-                mapname = mapname.strip()
-            if (mapname is None):
-                mapname, players = self.getServInfos(msg_channelId)
-                print(mapname)
-                print(players)
-            if (mapname is not None and mapname != ""):
-                if (cmd in ["!topruns", "!tr"]):
-                    emb = await generateEmbedToprun(mapname, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
-                    await message.channel.send(embed=emb)
-                elif (cmd == "!top"):
-                    emb = await generateEmbedToprun(mapname, allRuns=False, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
-                    await message.channel.send(embed=emb)
-                elif (cmd == "!mapinfos" or cmd == "!mapinfo"):
-                    emb = await generateEmbed(mapname, None, None, self.urt_discord_bridge.bridgeConfig)
-                    await message.channel.send(embed=emb)
-                elif (cmd == "!status"):
-                    emb = await generateEmbed(mapname, None, players, self.urt_discord_bridge.bridgeConfig)
-                    await message.channel.send(embed=emb)
+            await self.on_message_handle_commands(message, msg, msg_channelId)
         elif (message.author.bot):
             return
         else:

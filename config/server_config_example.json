@@ -5,6 +5,8 @@
     "demoFileLog" : "apisend.log",
     "refreshInterval" : 1,
     "logo" : "https://urtjumpmaps.com/static/imgs/urtshells.png",
+    "mapfolder" : "to-define",
+    "mapUploadChannelId" : 4321,
     "servers" : [
         {
             "ip" : "ip_server1",
@@ -28,5 +30,9 @@
             "levelshot" : "https://urtjumpmaps.com/static/imgs/lvlshots/{}.jpg"
         },
         "apikey" : "APIKEY_ASK_TO_ULBENS"
+    },
+    "uvicorn" : {
+        "url" : "localhost",
+        "port" : 5000
     }
 }

@@ -30,15 +30,15 @@ class UrtDiscordBridge():
         return self.messages
 
     def sendMessage(self, channelId: int, author: str, message : str) -> None:
-        print(f"{message} by {author} in {channelId}")
+        # print(f"{message} by {author} in {channelId}")
         if (channelId in self.bridgeConfig.channelIdDict):
             pyquake3 = self.bridgeConfig.channelIdDict[channelId]
             msgs = textwrap.wrap(message, 70)
             for msg in msgs:
                 msg = f"^5{author}^7 {msg}"
                 pyquake3.rcon("saybot %s" % msg) #check why saybot isn't working correctly
-        else:
-            print(f"Channel : {channelId} was not found in self.bridgeConfig.channelIdDict")
+        # else:
+        #     print(f"Channel : {channelId} was not found in self.bridgeConfig.channelIdDict")
 
     ################################################################### Demos
 

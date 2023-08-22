@@ -30,5 +30,12 @@ def demoTest():
         requests.post(f"http://localhost:5000/demo", json=json)
         sleep(1)
 
+def download():
+    for i in range (50):
+        r = requests.get("http://localhost:5000/q3ut4/ut4_testulben.pk3")
+        print(f"Status ({i+1}) : {r.status_code}")
+        sleep(0.1)
+
+# download()
 # messageTest()
 # demoTest()

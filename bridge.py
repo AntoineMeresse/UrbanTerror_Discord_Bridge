@@ -2,15 +2,16 @@ import asyncio
 from typing import Tuple
 import discord
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from fastapi import FastAPI
-
+from fastapi import Depends, FastAPI
 from src.BridgeConfig import BridgeConfig
 from src.DiscordClient import DiscordClient
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import DiscordMessage
 from src.RequestObjects import DemoInfos, DiscordMessageEmbed, PingInfos, ServerInfos
+from src.RateLimiter import RateLimiter
 
 import sys
 
@@ -36,6 +37,22 @@ bridgeConfig, bridge, bot = initDiscordBot()
 ####################################### FastAPI #######################################
 
 app = FastAPI()
+local = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'] ,
+    allow_methods=['GET'],
+)
+
+local.add_middleware(
+    CORSMiddleware,
+    allow_origins=['http://localhost'] ,
+    allow_methods=['GET', 'POST'],
+)
+
+# In-memory storage for request counters
+request_counters = {}
 
 @app.on_event("startup")
 async def startup_event(): #this fucntion will run before the main API starts
@@ -45,40 +62,52 @@ async def startup_event(): #this fucntion will run before the main API starts
 
 @app.get("/")
 async def root(): 
-    return {"Main"}
+    return {"Bridge working"}
 
-@app.post("/message")
+@local.get("/")
+async def root(): 
+    return {"Bridge local working"}
+
+@local.post("/message")
 async def sendMessage(message: DiscordMessage):
     bridge.addMessages(message)
     return message
 
-@app.post("/emb")
+@local.post("/emb")
 async def sendMessageEmbed(message: DiscordMessageEmbed):
     bridge.addMessages(message)
     return message
 
-@app.post("/demo")
+@local.post("/demo")
 async def sendDemo(demo : DemoInfos):
     bridge.addDemos(demosInfos= demo)
     return demo
 
-@app.post("/server")
+@local.post("/server")
 async def updateServer(infos : ServerInfos):
     bridge.setServerInfo(infos)
     return infos
 
-@app.post("/mapsync")
+@local.post("/mapsync")
 async def mapSync():
     bridge.mapSync()
     return "Map sync : ok"
 
-@app.post("/server-status")
+@local.post("/server-status")
 async def isServerOk(infos : PingInfos) -> bool:
     return bridge.bridgeConfig.isServerStatusOk(infos)
 
-# @app.get("/q3ut4/{name_file}")
-# async def getFile(name_file : str):
-#     return FileResponse(path=f"/home/antoine/dev/UrbanTerror_Discord_Bridge/test/{name_file}")
+@app.get("/q3ut4/{name_file}", dependencies=[Depends(
+            RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))]
+        )
+async def getMap(name_file : str):
+    mapfile = name_file
+    if (not ".pk3" in mapfile):
+        mapfile+=".pk3"
+    path = f"{bridgeConfig.mapfolder}/{mapfile}"
+    return FileResponse(path=path)
+
+app.mount('/local', local)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="localhost", port=5000)
+    uvicorn.run(app, host=bridgeConfig.url, port=bridgeConfig.port)
