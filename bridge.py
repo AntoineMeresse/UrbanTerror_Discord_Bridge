@@ -47,7 +47,7 @@ app.add_middleware(
 
 local.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost'] ,
+    allow_origins=['http://localhost', bridgeConfig.url] ,
     allow_methods=['GET', 'POST'],
 )
 
@@ -110,4 +110,5 @@ async def getMap(name_file : str):
 app.mount('/local', local)
 
 if __name__ == "__main__":
+    # uvicorn.run(app, port=bridgeConfig.port)
     uvicorn.run(app, host=bridgeConfig.url, port=bridgeConfig.port)
