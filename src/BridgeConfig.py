@@ -30,7 +30,7 @@ class BridgeConfig():
 
         self.url : str = None
         self.port : int = None
-        self.ws_url = f"{self.url}:{self.port}"
+        self.ws_url = str = None
         
         self.serverAdressDict : Dict[str, UrtDiscordServer] = dict()
         self.channelIdDict : Dict[int, PyQuake3] = dict()
@@ -64,6 +64,7 @@ class BridgeConfig():
 
             self.url = datas['uvicorn']['url']
             self.port = datas['uvicorn']['port']
+            self.ws_url = f"{self.url}:{self.port}"
 
     def addServer(self, serverInfos : Dict):
         servername = serverInfos["name"]
