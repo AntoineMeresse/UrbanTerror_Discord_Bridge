@@ -30,6 +30,7 @@ class BridgeConfig():
 
         self.url : str = None
         self.port : int = None
+        self.ws_url = f"{self.url}:{self.port}"
         
         self.serverAdressDict : Dict[str, UrtDiscordServer] = dict()
         self.channelIdDict : Dict[int, PyQuake3] = dict()

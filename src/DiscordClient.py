@@ -246,7 +246,7 @@ class DiscordClient(discord.Client):
             if (serv.status is not None):
                 try:
                     async with asyncio.timeout(10):
-                        available = await getServerStatus(serv.address)
+                        available = await getServerStatus(self.urt_discord_bridge.bridgeConfig.ws_url,serv.address)
                         emb = await generateEmbed(serv.mapname, None, serv.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
                                     servername=serv.servername, servAvailable=available, connectMessage=f"/connect {serv.address}")
                         await serv.status.edit(embed=emb, view=ServerButtons(serv.mapname, self.urt_discord_bridge.bridgeConfig))
