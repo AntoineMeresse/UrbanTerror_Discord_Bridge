@@ -80,6 +80,12 @@ class DiscordClient(discord.Client):
             else:
                 await message.channel.send("You are not an [UJM] Admin")
             return
+        elif (cmd == "!resetStatus"):
+            if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
+                await self.restartStatus()
+        elif (cmd == "!resetBridge"):
+              if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
+                 await self.restartBridges()
         elif (cmd == "!help"):
             cmds = [
                 "Available commands :",
@@ -97,8 +103,6 @@ class DiscordClient(discord.Client):
             mapname = mapname.strip()
         if (mapname is None):
             mapname, players = self.getServInfos(msg_channelId)
-            print(mapname)
-            print(players)
         if (mapname is not None and mapname != ""):
             if (cmd in ["!topruns", "!tr"]):
                 emb = await generateEmbedToprun(mapname, bridgeConfig=self.urt_discord_bridge.bridgeConfig)
@@ -173,6 +177,25 @@ class DiscordClient(discord.Client):
         if (self.urt_discord_bridge.bridgeConfig.statusChannelId):
             self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
         
+    async def restartStatus(self) -> None:
+        if (self.serverinfosTask):
+            try:
+                cancel = self.serverinfosTask.cancel()
+                print(f"Status was cancel : {cancel}")
+                if (cancel):
+                    self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
+            except:
+                print("Couldn't restart status")
+
+    async def restartBridges(self) -> None:
+        if (self.messageTask):
+            try:
+                cancel = self.messageTask.cancel()
+                print(f"Bridge was cancel : {cancel}")
+                if (cancel):
+                    self.messageTask = self.loop.create_task(self.send_message_task())
+            except:
+                print("Couldn't restart bridges")
 
     async def send_message_task(self):
         await self.wait_until_ready()
