@@ -189,7 +189,7 @@ class DiscordClient(discord.Client):
                 await message.channel.send(f"Status was cancel : {cancel}")
                 if (cancel):
                     self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
-                    await message.delete()
+                    # await message.delete()
                 else:
                     await message.channel.send("[Debug] It was not possible to cancel the current task.")
             except:
@@ -205,7 +205,7 @@ class DiscordClient(discord.Client):
                 await message.channel.send(f"Bridge was cancel : {cancel}")
                 if (cancel):
                     self.messageTask = self.loop.create_task(self.send_message_task())
-                    await message.delete()
+                    # await message.delete()
                 else:
                     await message.channel.send("[Debug] It was not possible to cancel the current task.")
             except:
