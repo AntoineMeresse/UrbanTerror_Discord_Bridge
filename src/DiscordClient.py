@@ -49,7 +49,7 @@ class DiscordClient(discord.Client):
     
     async def on_message_handle_commands(self, message: discord.Message, msg, msg_channelId):
         s = msg.split(" ")
-        cmd = s[0]
+        cmd : str = s[0]
         if (cmd == "!rcon" and len(s) >= 2):
             if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
                 args = " ".join(s[1:])
@@ -80,19 +80,24 @@ class DiscordClient(discord.Client):
             else:
                 await message.channel.send("You are not an [UJM] Admin")
             return
-        elif (cmd == "!resetStatus"):
+        elif (cmd.lower() == "!resetstatus"):
             if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
-                await self.restartStatus()
-        elif (cmd == "!resetBridge"):
-              if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
-                 await self.restartBridges()
+                await self.restartStatus(message)
+        elif (cmd.lower() == "!resetbridges"):
+            if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
+                 await self.restartBridges(message)
         elif (cmd == "!help"):
             cmds = [
                 "Available commands :",
+                "Everyone :"
                 "   |-> !mapinfos or !mapinfo : To get map infos",
-                "   |-> !topruns : To get all runs for a given map",
+                "   |-> !topruns, !tr : To get all runs for a given map",
                 "   |-> !top : To get only best runs for a given map",
-                "   |-> !status : To display latest server status (Only in #fliro-bridge)",
+                "   |-> !status : To display latest server status (Only in server bridges)",
+                "[UJM] Admins :",
+                "   |-> !restart : Restart the server and bot (Only in server bridges)",
+                "   |-> !resetbridges : Try to reset bridges messages", 
+                "   |-> !resetstatus : Try to reset status channel", 
             ]
             await message.channel.send(discordBlock(cmds))
             return
@@ -177,25 +182,37 @@ class DiscordClient(discord.Client):
         if (self.urt_discord_bridge.bridgeConfig.statusChannelId):
             self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
         
-    async def restartStatus(self) -> None:
+    async def restartStatus(self, message: discord.Message) -> None:
         if (self.serverinfosTask):
             try:
                 cancel = self.serverinfosTask.cancel()
-                print(f"Status was cancel : {cancel}")
+                await message.channel.send(f"Status was cancel : {cancel}")
                 if (cancel):
                     self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
+                    await message.delete()
+                else:
+                    await message.channel.send("[Debug] It was not possible to cancel the current task.")
             except:
-                print("Couldn't restart status")
+                await message.channel.send("[Debug] Couldn't restart status")
+        else:
+            await message.channel.send("[Debug] There was no task. Starting a new one.")
+            self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
 
-    async def restartBridges(self) -> None:
+    async def restartBridges(self, message: discord.Message) -> None:
         if (self.messageTask):
             try:
                 cancel = self.messageTask.cancel()
-                print(f"Bridge was cancel : {cancel}")
+                await message.channel.send(f"Bridge was cancel : {cancel}")
                 if (cancel):
                     self.messageTask = self.loop.create_task(self.send_message_task())
+                    await message.delete()
+                else:
+                    await message.channel.send("[Debug] It was not possible to cancel the current task.")
             except:
-                print("Couldn't restart bridges")
+                await message.channel.send("[Debug] Couldn't restart bridges")
+        else:
+            await message.channel.send("[Debug] There was no task. Starting a new one.")
+            self.messageTask = self.loop.create_task(self.send_message_task())
 
     async def send_message_task(self):
         await self.wait_until_ready()
@@ -285,5 +302,15 @@ class DiscordClient(discord.Client):
             await self.initStatusMessage(channel)
             while not self.is_closed():
                 await self.updateStatusServers()
-                await asyncio.sleep(10) # Params
+                await asyncio.sleep(15) # Params
+            with open("logs/status_ko.txt", "a+") as fl:
+                fl.write(f"{datetime.datetime.now()} | websocket was closed)")
+                fl.write(f"{datetime.datetime.now()} | Trying to restart bridge")
+                try: 
+                    cancel = self.serverinfosTask.cancel()
+                    self.write(f"{datetime.datetime.now()} | Cancel : {cancel}")
+                except:
+                    pass
+                self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
+                
             
