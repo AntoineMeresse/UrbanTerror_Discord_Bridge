@@ -125,32 +125,53 @@ class DiscordClient(discord.Client):
 
     async def on_message_handle_fileUpload(self, message: discord.Message, msg_channelId):
         if (msg_channelId == self.urt_discord_bridge.bridgeConfig.mapUploadChannelId):
-            print("Upload")
             attachements = message.attachments
             msg = message.content
-            for uploadedFile in attachements:
-                filename = uploadedFile.filename
-                if (filename.endswith(".pk3")): 
-                    path = f"{self.urt_discord_bridge.bridgeConfig.mapfolder}/{filename}"
-                    file_exists = os.path.isfile(path)
-                    replace = "replace" in msg.lower()
-                    if (file_exists and not replace):
-                        await message.channel.send(f"{filename} is already on the repository.```yaml\nIf you want to replace it :\n - Upload it again with 'replace' in the message\n```") 
-                    else:
-                        await uploadedFile.save(path)
-                        with zipfile.ZipFile(path, 'r') as zip_file:
-                            file_list = zip_file.namelist()
-                            bspname = filename.replace(".pk3", ".bsp")
-                            bsppath = f"maps/{bspname}"
-                            if (bsppath in file_list):
-                                if (replace):
-                                    await message.channel.send(f"{filename} has been updated.") 
+            if (len(attachements) > 0):
+                for uploadedFile in attachements:
+                    filename = uploadedFile.filename
+                    if (filename.endswith(".pk3")): 
+                        path = f"{self.urt_discord_bridge.bridgeConfig.mapfolder}/{filename}"
+                        file_exists = os.path.isfile(path)
+                        replace = "replace" in msg.lower()
+                        if (file_exists and not replace):
+                            await message.channel.send(f"{filename} is already on the repository.```yaml\nIf you want to replace it :\n - Upload it again with 'replace' in the message\n```") 
+                        else:
+                            await uploadedFile.save(path)
+                            with zipfile.ZipFile(path, 'r') as zip_file:
+                                file_list = zip_file.namelist()
+                                bspname = filename.replace(".pk3", ".bsp")
+                                bsppath = f"maps/{bspname}"
+                                if (bsppath in file_list):
+                                    url = f"http://{self.urt_discord_bridge.bridgeConfig.ws_url}/q3ut4/{filename}"
+                                    if (replace):
+                                        await message.channel.send(f"{filename} has been updated. Donwload link : {url}") 
+                                    else:
+                                        await message.channel.send(f"{filename} has been successfuly uploaded. Donwload link : {url}") 
                                 else:
-                                    await message.channel.send(f"{filename} has been successfuly uploaded.") 
+                                    file_exists = os.path.isfile(path)
+                                    if file_exists:
+                                        os.remove(path)
+                                    await message.channel.send(f"{filename} has not been uploaded.\n`{bsppath}` missing inside the pk3.") 
+                    else:
+                        await message.channel.send("Please provide a pk3 file")
+            else:
+                if not message.author.bot:
+                    s = msg.split(" ")
+                    if len(s) >= 2: 
+                        cmd : str = s[0]
+                        filename : str = s[1]
+                        if (cmd.lower() == "!delete"):
+                            path = f"{self.urt_discord_bridge.bridgeConfig.mapfolder}/{filename}"
+                            file_exists = os.path.isfile(path)
+                            if file_exists:
+                                os.remove(path)
+                                await message.channel.send(f"{filename} has been deleted.")
+                                return
                             else:
-                                await message.channel.send(f"{filename} has not been uploaded.\n`{bsppath}` missing inside the pk3.") 
-                else:
-                    await message.channel.send("Please provide a pk3 file")   
+                                await message.channel.send(f"{filename} doesn't exist.")  
+                    await message.channel.send("Please specify a mapname. (example : `!delete ut4_example.pk3`)")
+
                     
     async def on_message(self, message : discord.Message):
         msg = message.content
