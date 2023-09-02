@@ -97,6 +97,16 @@ async def mapSync():
 async def isServerOk(infos : PingInfos) -> bool:
     return bridge.bridgeConfig.isServerStatusOk(infos)
 
+@app.get("/status", dependencies=[Depends(
+            RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))]
+        )
+async def getStatus() -> list:
+    return [serv.get_infos() for serv in bridgeConfig.serverAdressDict.values()]
+
+@local.get("/status")
+async def getStatusLocal() -> list:
+    return [serv.get_infos() for serv in bridgeConfig.serverAdressDict.values()]
+
 @app.get("/q3ut4/{name_file}", dependencies=[Depends(
             RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))]
         )

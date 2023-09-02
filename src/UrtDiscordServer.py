@@ -32,3 +32,16 @@ class UrtDiscordServer():
             res += f"\n   ----> {p}"
         res += "```"
         return res
+    
+    def get_infos(self):
+        ingame = [x.name for x in self.players if x.ingame]
+        spec = [x.name for x in self.players if not x.ingame]
+        nbPlayers = len(self.players)
+        return {
+            self.servername : {
+                "mapname" : self.mapname,
+                "nbPlayers" : nbPlayers,
+                "ingame" : ingame,
+                "spec" : spec
+            }
+        }
