@@ -3,6 +3,7 @@ import datetime
 import os
 import subprocess
 import discord
+from discord.ext import tasks
 import zipfile
 
 from typing import Any, Union
@@ -67,7 +68,7 @@ class DiscordClient(discord.Client):
             if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
                 restart_cmd = self.getRestart(msg_channelId)
                 if (restart_cmd is not None):
-                    subprocess.Popen(restart_cmd, shell=True, preexec_fn=os.setpgrp)
+                    subprocess.Popen(restart_cmd, preexec_fn=os.setpgrp)
                     statusChannel = self.get_channel(self.urt_discord_bridge.bridgeConfig.statusChannelId)
                     restart_message = "Server restarted."
                     if (statusChannel is not None):
@@ -80,12 +81,12 @@ class DiscordClient(discord.Client):
             else:
                 await message.channel.send("You are not an [UJM] Admin")
             return
-        elif (cmd.lower() == "!resetstatus"):
-            if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
-                await self.restartStatus(message)
-        elif (cmd.lower() == "!resetbridges"):
-            if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
-                 await self.restartBridges(message)
+        # elif (cmd.lower() == "!resetstatus"):
+        #     if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
+        #         await self.restartStatus(message)
+        # elif (cmd.lower() == "!resetbridges"):
+        #     if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
+        #          await self.restartBridges(message)
         elif (cmd == "!help"):
             cmds = [
                 "Available commands :",
@@ -96,8 +97,8 @@ class DiscordClient(discord.Client):
                 "   |-> !status : To display latest server status (Only in server bridges)",
                 "[UJM] Admins :",
                 "   |-> !restart : Restart the server and bot (Only in server bridges)",
-                "   |-> !resetbridges : Try to reset bridges messages", 
-                "   |-> !resetstatus : Try to reset status channel", 
+                # "   |-> !resetbridges : Try to reset bridges messages", 
+                # "   |-> !resetstatus : Try to reset status channel", 
             ]
             await message.channel.send(discordBlock(cmds))
             return
@@ -180,39 +181,39 @@ class DiscordClient(discord.Client):
         if (self.urt_discord_bridge.bridgeConfig.demoChannelId):
             self.demoTask = self.loop.create_task(self.send_demos_task())
         if (self.urt_discord_bridge.bridgeConfig.statusChannelId):
-            self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
+            self.set_discord_server_infos_task.start()
         
-    async def restartStatus(self, message: discord.Message) -> None:
-        if (self.serverinfosTask):
-            try:
-                cancel = self.serverinfosTask.cancel()
-                await message.channel.send(f"Status was cancel : {cancel}")
-                if (cancel):
-                    self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
-                    # await message.delete()
-                else:
-                    await message.channel.send("[Debug] It was not possible to cancel the current task.")
-            except:
-                await message.channel.send("[Debug] Couldn't restart status")
-        else:
-            await message.channel.send("[Debug] There was no task. Starting a new one.")
-            self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
+    # async def restartStatus(self, message: discord.Message) -> None:
+    #     if (self.serverinfosTask):
+    #         try:
+    #             cancel = self.serverinfosTask.cancel()
+    #             await message.channel.send(f"Status was cancel : {cancel}")
+    #             if (cancel):
+    #                 self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
+    #                 # await message.delete()
+    #             else:
+    #                 await message.channel.send("[Debug] It was not possible to cancel the current task.")
+    #         except:
+    #             await message.channel.send("[Debug] Couldn't restart status")
+    #     else:
+    #         await message.channel.send("[Debug] There was no task. Starting a new one.")
+    #         self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
 
-    async def restartBridges(self, message: discord.Message) -> None:
-        if (self.messageTask):
-            try:
-                cancel = self.messageTask.cancel()
-                await message.channel.send(f"Bridge was cancel : {cancel}")
-                if (cancel):
-                    self.messageTask = self.loop.create_task(self.send_message_task())
-                    # await message.delete()
-                else:
-                    await message.channel.send("[Debug] It was not possible to cancel the current task.")
-            except:
-                await message.channel.send("[Debug] Couldn't restart bridges")
-        else:
-            await message.channel.send("[Debug] There was no task. Starting a new one.")
-            self.messageTask = self.loop.create_task(self.send_message_task())
+    # async def restartBridges(self, message: discord.Message) -> None:
+    #     if (self.messageTask):
+    #         try:
+    #             cancel = self.messageTask.cancel()
+    #             await message.channel.send(f"Bridge was cancel : {cancel}")
+    #             if (cancel):
+    #                 self.messageTask = self.loop.create_task(self.send_message_task())
+    #                 # await message.delete()
+    #             else:
+    #                 await message.channel.send("[Debug] It was not possible to cancel the current task.")
+    #         except:
+    #             await message.channel.send("[Debug] Couldn't restart bridges")
+    #     else:
+    #         await message.channel.send("[Debug] There was no task. Starting a new one.")
+    #         self.messageTask = self.loop.create_task(self.send_message_task())
 
     async def send_message_task(self):
         await self.wait_until_ready()
@@ -294,23 +295,25 @@ class DiscordClient(discord.Client):
                     with open("logs/updateStatusServers_errors.txt", "a+") as fl:
                         fl.write(f"{datetime.datetime.now()} | Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
 
+    # async def set_discord_server_infos_task(self):
+    #     await self.wait_until_ready()
+    #     channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.statusChannelId)
+    #     if (channel is not None):
+    #         await self.deleteStatusMessage(channel)
+    #         await self.initStatusMessage(channel)
+    #         while not self.is_closed():
+    #             await self.updateStatusServers()
+    #             await asyncio.sleep(15) # Params
+
+    @tasks.loop(seconds=30)
     async def set_discord_server_infos_task(self):
+        await self.updateStatusServers()
+
+    @set_discord_server_infos_task.before_loop
+    async def set_discord_server_infos_task_before(self):
         await self.wait_until_ready()
         channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.statusChannelId)
-        if (channel is not None):
-            await self.deleteStatusMessage(channel)
-            await self.initStatusMessage(channel)
-            while not self.is_closed():
-                await self.updateStatusServers()
-                await asyncio.sleep(15) # Params
-            with open("logs/status_ko.txt", "a+") as fl:
-                fl.write(f"{datetime.datetime.now()} | websocket was closed)")
-                fl.write(f"{datetime.datetime.now()} | Trying to restart bridge")
-                try: 
-                    cancel = self.serverinfosTask.cancel()
-                    self.write(f"{datetime.datetime.now()} | Cancel : {cancel}")
-                except:
-                    pass
-                self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
+        await self.deleteStatusMessage(channel)
+        await self.initStatusMessage(channel)
                 
             
