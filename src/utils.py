@@ -39,7 +39,7 @@ async def generateEmbed(mapname, mapinfos, players, bridgeConfig : BridgeConfig,
         getPlayersForEmbed(players, emb)
 
     if (connectMessage is not None):
-        text = f"```css\n{connectMessage}\n```"
+        text = f"```\n{connectMessage}\n```"
         emb.add_field(name="Join this server:", value=text, inline=False)
 
     return emb
