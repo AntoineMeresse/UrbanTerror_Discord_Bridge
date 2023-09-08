@@ -1,11 +1,14 @@
 import asyncio
-from typing import Tuple
 import discord
-from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from fastapi import Depends, FastAPI
+from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
+from fastapi import Depends, FastAPI, Request
+
+from typing import Tuple
+from src.map_repository import getAllMaps, getMapPath
 from src.BridgeConfig import BridgeConfig
 from src.DiscordClient import DiscordClient
 from src.UrtDiscordBridge import UrtDiscordBridge
@@ -36,6 +39,7 @@ bridgeConfig, bridge, bot = initDiscordBot()
 
 ####################################### FastAPI #######################################
 
+templates = Jinja2Templates(directory="templates")
 app = FastAPI()
 local = FastAPI()
 
@@ -107,15 +111,15 @@ async def getStatus() -> list:
 async def getStatusLocal() -> list:
     return [serv.get_infos() for serv in bridgeConfig.serverAdressDict.values()]
 
-@app.get("/q3ut4/{name_file}", dependencies=[Depends(
+@app.get("/q3ut4/{mapfile}", dependencies=[Depends(
             RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))]
         )
-async def getMap(name_file : str):
-    mapfile = name_file
-    if (not ".pk3" in mapfile):
-        mapfile+=".pk3"
-    path = f"{bridgeConfig.mapfolder}/{mapfile}"
-    return FileResponse(path=path)
+async def getMap(mapfile : str):
+    return FileResponse(path=getMapPath(mapfile, bridgeConfig.mapfolder))
+
+@app.get("/q3ut4", dependencies=[Depends(RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))])
+async def getMapList(request: Request):
+    return templates.TemplateResponse("maplist.html", {"request": request, "maps": getAllMaps(bridgeConfig.mapfolder)})
 
 app.mount('/local', local)
 

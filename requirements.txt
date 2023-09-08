@@ -2,3 +2,4 @@ discord
 fastapi
 uvicorn[standard]
 aiohttp
+jinja2

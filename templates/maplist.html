@@ -1,0 +1,68 @@
+<html>
+<head>
+    <title>[UJM] Map List</title>
+    <style>
+        html {
+            background-color: #212529;
+        }
+        h1 {
+            color : rgba(255, 255, 255, 0.55);
+        }
+
+        p {
+            font-size: larger;
+        }
+
+        a {
+            color : #6ea8fe
+            
+        }
+
+        h1, a {
+            font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+        }
+
+        .center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .column {
+            flex-direction: column;
+        }
+
+        img {
+            padding-right: 3vw;
+        }
+
+        .top {
+            border-top: 1px rgba(255, 255, 255, 0.55) solid;
+            border-bottom: 1px rgba(255, 255, 255, 0.55) solid;
+            width: 90vw;
+        }
+
+        .maplist {
+            width: 70vw;
+        }
+
+        p {
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="center column maindiv">
+        <div class="center top">
+            <a href="https://urtjumpmaps.com/home/" target="_blank"><img src="http://51.195.119.214:5000/static/imgs/urtshells.png" width="64" height="64"></a>
+            <h1>[UJM] Map List</h1>
+        </div>
+        <div class="maplist">
+            {% for map in maps %}
+                <p><a href=q3ut4/{{map}}>{{map}}</a></p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
