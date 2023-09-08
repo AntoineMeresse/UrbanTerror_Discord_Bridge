@@ -119,7 +119,8 @@ async def getMap(mapfile : str):
 
 @app.get("/q3ut4", dependencies=[Depends(RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))])
 async def getMapList(request: Request):
-    return templates.TemplateResponse("maplist.html", {"request": request, "maps": getAllMaps(bridgeConfig.mapfolder)})
+    maps = getAllMaps(bridgeConfig.mapfolder)
+    return templates.TemplateResponse("maplist.html", {"request": request, "maps": maps, "number" : len(maps)})
 
 app.mount('/local', local)
 
