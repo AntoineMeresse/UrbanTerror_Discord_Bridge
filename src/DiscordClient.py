@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import os
+import re
 import subprocess
 import discord
 from discord.ext import tasks
@@ -125,9 +126,8 @@ class DiscordClient(discord.Client):
                     if (filename.endswith(".pk3")): 
                         path = f"{self.urt_discord_bridge.bridgeConfig.mapfolder}/{filename}"
                         file_exists = os.path.isfile(path)
-                        replace = "replace" in msg.lower()
-                        if (file_exists and not replace):
-                            await message.channel.send(f"{filename} is already on the repository.```yaml\nIf you want to replace it :\n - Upload it again with 'replace' in the message\n```") 
+                        if (file_exists):
+                            await message.channel.send(f"{filename} is already on the repository.```yaml\nIf you want to replace it :\n - !delete {filename}\n - Upload it again\n```") 
                         else:
                             await uploadedFile.save(path)
                             with zipfile.ZipFile(path, 'r') as zip_file:
@@ -136,10 +136,11 @@ class DiscordClient(discord.Client):
                                 bsppath = f"maps/{bspname}"
                                 if (bsppath in file_list):
                                     url = f"http://{self.urt_discord_bridge.bridgeConfig.getWsUrl()}/q3ut4/{filename}"
-                                    if (replace):
-                                        await message.channel.send(f"`{filename}` has been updated. Download link : {url}") 
-                                    else:
-                                        await message.channel.send(f"`{filename}` has been successfuly uploaded. Download link : {url}") 
+                                    await message.channel.send(f"`{filename}` has been successfuly uploaded. Download link : {url}")
+                                    if len(msg) > 0:
+                                        channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.mappingChannelId)
+                                        if (channel is not None):
+                                            await channel.send(content=msg, file = discord.File(fp=path))
                                 else:
                                     file_exists = os.path.isfile(path)
                                     if file_exists:
