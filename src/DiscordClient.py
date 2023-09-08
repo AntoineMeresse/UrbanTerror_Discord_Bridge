@@ -81,12 +81,6 @@ class DiscordClient(discord.Client):
             else:
                 await message.channel.send("You are not an [UJM] Admin")
             return
-        # elif (cmd.lower() == "!resetstatus"):
-        #     if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
-        #         await self.restartStatus(message)
-        # elif (cmd.lower() == "!resetbridges"):
-        #     if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
-        #          await self.restartBridges(message)
         elif (cmd == "!help"):
             cmds = [
                 "Available commands :",
@@ -96,9 +90,7 @@ class DiscordClient(discord.Client):
                 "   |-> !top : To get only best runs for a given map",
                 "   |-> !status : To display latest server status (Only in server bridges)",
                 "[UJM] Admins :",
-                "   |-> !restart : Restart the server and bot (Only in server bridges)",
-                # "   |-> !resetbridges : Try to reset bridges messages", 
-                # "   |-> !resetstatus : Try to reset status channel", 
+                "   |-> !restart : Restart the server and bot (Only in server bridges)"
             ]
             await message.channel.send(discordBlock(cmds))
             return
@@ -143,11 +135,11 @@ class DiscordClient(discord.Client):
                                 bspname = filename.replace(".pk3", ".bsp")
                                 bsppath = f"maps/{bspname}"
                                 if (bsppath in file_list):
-                                    url = f"http://{self.urt_discord_bridge.bridgeConfig.ws_url}/q3ut4/{filename}"
+                                    url = f"http://{self.urt_discord_bridge.bridgeConfig.getWsUrl()}/q3ut4/{filename}"
                                     if (replace):
-                                        await message.channel.send(f"{filename} has been updated. Donwload link : {url}") 
+                                        await message.channel.send(f"`{filename}` has been updated. Download link : {url}") 
                                     else:
-                                        await message.channel.send(f"{filename} has been successfuly uploaded. Donwload link : {url}") 
+                                        await message.channel.send(f"`{filename}` has been successfuly uploaded. Download link : {url}") 
                                 else:
                                     file_exists = os.path.isfile(path)
                                     if file_exists:
@@ -158,19 +150,20 @@ class DiscordClient(discord.Client):
             else:
                 if not message.author.bot:
                     s = msg.split(" ")
-                    if len(s) >= 2: 
-                        cmd : str = s[0]
-                        filename : str = s[1]
-                        if (cmd.lower() == "!delete"):
+                    cmd : str = s[0]
+                    if (cmd.lower() == "!delete"):
+                        if len(s) == 2:
+                            filename : str = s[1]
                             path = f"{self.urt_discord_bridge.bridgeConfig.mapfolder}/{filename}"
                             file_exists = os.path.isfile(path)
                             if file_exists:
                                 os.remove(path)
-                                await message.channel.send(f"{filename} has been deleted.")
+                                await message.channel.send(f"`{filename}` has been deleted.")
                                 return
                             else:
-                                await message.channel.send(f"{filename} doesn't exist.")  
-                    await message.channel.send("Please specify a mapname. (example : `!delete ut4_example.pk3`)")
+                                await message.channel.send(f"`{filename}` doesn't exist.")  
+                        else:
+                            await message.channel.send("Please specify a mapname. (example : `!delete ut4_example.pk3`)")
 
                     
     async def on_message(self, message : discord.Message):
@@ -204,38 +197,6 @@ class DiscordClient(discord.Client):
         if (self.urt_discord_bridge.bridgeConfig.statusChannelId):
             self.set_discord_server_infos_task.start()
         
-    # async def restartStatus(self, message: discord.Message) -> None:
-    #     if (self.serverinfosTask):
-    #         try:
-    #             cancel = self.serverinfosTask.cancel()
-    #             await message.channel.send(f"Status was cancel : {cancel}")
-    #             if (cancel):
-    #                 self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
-    #                 # await message.delete()
-    #             else:
-    #                 await message.channel.send("[Debug] It was not possible to cancel the current task.")
-    #         except:
-    #             await message.channel.send("[Debug] Couldn't restart status")
-    #     else:
-    #         await message.channel.send("[Debug] There was no task. Starting a new one.")
-    #         self.serverinfosTask = self.loop.create_task(self.set_discord_server_infos_task())
-
-    # async def restartBridges(self, message: discord.Message) -> None:
-    #     if (self.messageTask):
-    #         try:
-    #             cancel = self.messageTask.cancel()
-    #             await message.channel.send(f"Bridge was cancel : {cancel}")
-    #             if (cancel):
-    #                 self.messageTask = self.loop.create_task(self.send_message_task())
-    #                 # await message.delete()
-    #             else:
-    #                 await message.channel.send("[Debug] It was not possible to cancel the current task.")
-    #         except:
-    #             await message.channel.send("[Debug] Couldn't restart bridges")
-    #     else:
-    #         await message.channel.send("[Debug] There was no task. Starting a new one.")
-    #         self.messageTask = self.loop.create_task(self.send_message_task())
-
     async def send_message_task(self):
         await self.wait_until_ready()
         foundChannel = self.setupChannels()
@@ -310,21 +271,11 @@ class DiscordClient(discord.Client):
                     async with asyncio.timeout(10):
                         available = await getServerStatus(self.urt_discord_bridge.bridgeConfig.ws_url,serv.address)
                         emb = await generateEmbed(serv.mapname, None, serv.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
-                                    servername=serv.servername, servAvailable=available, connectMessage=f"/connect {serv.address}")
+                                    servername=serv.servername, servAvailable=available, connectMessage=f"/connect {serv.displayedAddress}")
                         await serv.status.edit(embed=emb, view=ServerButtons(serv.mapname, self.urt_discord_bridge.bridgeConfig))
                 except asyncio.TimeoutError:
                     with open("logs/updateStatusServers_errors.txt", "a+") as fl:
                         fl.write(f"{datetime.datetime.now()} | Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
-
-    # async def set_discord_server_infos_task(self):
-    #     await self.wait_until_ready()
-    #     channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.statusChannelId)
-    #     if (channel is not None):
-    #         await self.deleteStatusMessage(channel)
-    #         await self.initStatusMessage(channel)
-    #         while not self.is_closed():
-    #             await self.updateStatusServers()
-    #             await asyncio.sleep(15) # Params
 
     @tasks.loop(seconds=30)
     async def set_discord_server_infos_task(self):

@@ -30,7 +30,8 @@ class BridgeConfig():
 
         self.url : str = None
         self.port : int = None
-        self.ws_url = str = None
+        self.ws_url : str = None
+        self.domain : str = None
         
         self.serverAdressDict : Dict[str, UrtDiscordServer] = dict()
         self.channelIdDict : Dict[int, PyQuake3] = dict()
@@ -49,8 +50,6 @@ class BridgeConfig():
             self.adminRole = datas['adminRole']
             self.refresh = datas['refreshInterval']
             self.logoUrl = datas['logo']
-            for serv in datas['servers']:
-                self.addServer(serv)
             
             self.apikey = datas['api']['apikey']
             self.apiUrl = datas['api']['urls']['global']
@@ -65,6 +64,12 @@ class BridgeConfig():
             self.url = datas['uvicorn']['url']
             self.port = datas['uvicorn']['port']
             self.ws_url = f"{self.url}:{self.port}"
+            if "domain" in datas['uvicorn']:
+                self.domain = datas['uvicorn']['domain']
+
+            # Setup all servs
+            for serv in datas['servers']:
+                self.addServer(serv)
 
     def addServer(self, serverInfos : Dict):
         servername = serverInfos["name"]
@@ -73,8 +78,9 @@ class BridgeConfig():
         rconpassword = serverInfos["rconpassword"]
         discordChannelId = serverInfos["channelId"]
         address = f"{ip}:{port}"
+        domain = f"{self.domain}:{port}" if (ip == self.url and self.domain is not None) else None
 
-        self.serverAdressDict[address] = UrtDiscordServer(address, discordChannelId, servername, rconpassword=rconpassword) 
+        self.serverAdressDict[address] = UrtDiscordServer(address, discordChannelId, servername, rconpassword=rconpassword, domain=domain) 
         self.channelIdDict[discordChannelId] = PyQuake3(address, rconpassword)
         
         if ("restart" in serverInfos):
@@ -117,4 +123,6 @@ class BridgeConfig():
                    pass
         return False
 
+    def getWsUrl(self):
+        return self.ws_url.replace(self.url, self.domain) if self.domain is not None else self.ws_url
 
