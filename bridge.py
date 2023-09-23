@@ -13,7 +13,7 @@ from src.BridgeConfig import BridgeConfig
 from src.DiscordClient import DiscordClient
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import DiscordMessage
-from src.RequestObjects import DemoInfos, DiscordMessageEmbed, PingInfos, ServerInfos
+from src.RequestObjects import DemoInfos, DiscordMessageEmbed, PingInfos, PlayerPenInfos, ServerInfos
 from src.RateLimiter import RateLimiter
 
 import sys
@@ -121,6 +121,10 @@ async def getMap(mapfile : str):
 async def getMapList(request: Request):
     maps = getAllMaps(bridgeConfig.mapfolder)
     return templates.TemplateResponse("maplist.html", {"request": request, "maps": maps, "number" : len(maps)})
+
+# @local.post("/pen")
+# async def pen(penInfos : PlayerPenInfos):
+#     pass
 
 app.mount('/local', local)
 
