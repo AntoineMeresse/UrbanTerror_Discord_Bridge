@@ -241,7 +241,7 @@ class DiscordClient(discord.Client):
                     serv_channel = self.urt_discord_bridge.bridgeConfig.getChannel(demo.serverAddress)
                     msg = demo.msg
                     if (serv_channel is not None):
-                        msg += f"({serv_channel.jump_url})"
+                        msg = f"({serv_channel.jump_url}) " + msg
                     try:
                         async with asyncio.timeout(10):
                             post : discord.Message = await channel.send(msg, file = discord.File(fp=demo.path, filename=demo.name))
