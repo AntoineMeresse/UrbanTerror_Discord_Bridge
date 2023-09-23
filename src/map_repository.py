@@ -11,3 +11,6 @@ def getAllMaps(mapfolder):
     maps = [os.path.basename(urtmap) for urtmap in glob.glob(path)]
     maps.sort()
     return maps
+
+def getMapsWithPattern(pattern, mapfolder):
+    return [x.replace(".pk3", "") for x in getAllMaps(mapfolder) if pattern in x]

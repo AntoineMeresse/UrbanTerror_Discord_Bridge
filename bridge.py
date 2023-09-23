@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Depends, FastAPI, Request
 
 from typing import Tuple
-from src.map_repository import getAllMaps, getMapPath
+from src.map_repository import getAllMaps, getMapPath, getMapsWithPattern
 from src.BridgeConfig import BridgeConfig
 from src.DiscordClient import DiscordClient
 from src.UrtDiscordBridge import UrtDiscordBridge
@@ -125,6 +125,10 @@ async def getMapList(request: Request):
 # @local.post("/pen")
 # async def pen(penInfos : PlayerPenInfos):
 #     pass
+
+@local.get("/maps/download/{mapname}")
+async def getMapListWithPattern(mapname: str):
+    return {"matching" : getMapsWithPattern(mapname, bridgeConfig.mapfolder)}
 
 app.mount('/local', local)
 

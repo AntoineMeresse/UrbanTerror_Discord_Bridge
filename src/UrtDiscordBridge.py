@@ -65,7 +65,7 @@ class UrtDiscordBridge():
             try:
                 server.rcon("reloadMaps")
                 print(f"{server.address}:{server.port} | Reloadmaps OK")
-                server.rcon("Maps have been reloaded.")
+                # server.rcon("Maps have been reloaded.")
             except:
                 print(f"{server.address}:{server.port} | Reloadmaps KO (Server probably down)")
    
