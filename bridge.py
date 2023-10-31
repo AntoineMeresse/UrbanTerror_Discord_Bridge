@@ -2,7 +2,7 @@ import asyncio
 import discord
 import uvicorn
 
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi import Depends, FastAPI, Request
@@ -65,11 +65,15 @@ async def startup_event(): #this fucntion will run before the main API starts
     print(f"{bot.user} has connected to Discord!")
 
 @app.get("/")
-async def root(): 
+async def root():
+    return RedirectResponse(url="/q3ut4")
+
+@app.get("/status")
+async def status(): 
     return {"Bridge working"}
 
-@local.get("/")
-async def root(): 
+@local.get("/status")
+async def status(): 
     return {"Bridge local working"}
 
 @local.post("/message")
