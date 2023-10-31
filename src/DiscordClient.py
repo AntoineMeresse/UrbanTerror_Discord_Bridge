@@ -135,7 +135,7 @@ class DiscordClient(discord.Client):
                                 bspname = filename.replace(".pk3", ".bsp")
                                 bsppath = f"maps/{bspname}"
                                 if (bsppath in file_list):
-                                    url = f"http://{self.urt_discord_bridge.bridgeConfig.getWsUrl()}/q3ut4/{filename}"
+                                    url = f"https://{self.urt_discord_bridge.bridgeConfig.getWsUrl()}/q3ut4/{filename}"
                                     await message.channel.send(f"`{filename}` has been successfuly uploaded. Download link : {url}")
                                     if len(msg) > 0:
                                         channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.mappingChannelId)

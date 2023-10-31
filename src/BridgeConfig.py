@@ -126,5 +126,5 @@ class BridgeConfig():
         return False
 
     def getWsUrl(self):
-        return self.ws_url.replace(self.url, self.domain) if self.domain is not None else self.ws_url
+        return self.ws_url.replace(f"{self.url}:{self.port}", self.domain) if self.domain is not None else self.ws_url
 
