@@ -4,4 +4,4 @@ config/server_config.json
 test/test.py
 logs/
 test/maps/*
-nohup
+nohup.out
