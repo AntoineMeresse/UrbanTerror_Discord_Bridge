@@ -72,7 +72,7 @@ async def root():
 async def status(): 
     return {"Bridge working"}
 
-@local.get("/status")
+@local.get("/localstatus")
 async def status(): 
     return {"Bridge local working"}
 
