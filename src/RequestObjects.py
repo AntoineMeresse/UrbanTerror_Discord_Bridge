@@ -32,8 +32,3 @@ class ServerInfos(BaseModel):
 
 class PingInfos(BaseModel):
     serverAddress : str
-
-class PlayerPenInfos(BaseModel):
-    qkey : str
-    name : str
-    size : float

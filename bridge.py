@@ -126,10 +126,6 @@ async def getMapList(request: Request):
     maps = getAllMaps(bridgeConfig.mapfolder)
     return templates.TemplateResponse("maplist.html", {"request": request, "maps": maps, "number" : len(maps)})
 
-# @local.post("/pen")
-# async def pen(penInfos : PlayerPenInfos):
-#     pass
-
 @local.get("/maps/download/{mapname}")
 async def getMapListWithPattern(mapname: str):
     return {"matching" : getMapsWithPattern(mapname, bridgeConfig.mapfolder)}
