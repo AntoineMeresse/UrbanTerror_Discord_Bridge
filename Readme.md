@@ -3,10 +3,10 @@
 Created by Antoine Méresse (Discord : Fliro)
 
 Features:
-    - Bridge between Urban Terror servers and discord
-    - Map / demo upload using discord
-    - Server status
-    - To complete
+* Bridge between Urban Terror servers and discord
+* Map / demo upload using discord
+* Server status
+* To complete
 
 Note: 
 
