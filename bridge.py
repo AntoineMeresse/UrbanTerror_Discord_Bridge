@@ -13,7 +13,7 @@ from src.BridgeConfig import BridgeConfig
 from src.DiscordClient import DiscordClient
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import DiscordMessage
-from src.RequestObjects import DemoInfos, DiscordMessageEmbed, PingInfos, PlayerPenInfos, ServerInfos
+from src.RequestObjects import DemoInfos, DiscordMessageEmbed, PingInfos, ServerInfos
 from src.RateLimiter import RateLimiter
 
 import sys
