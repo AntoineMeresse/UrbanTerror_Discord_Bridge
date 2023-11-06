@@ -29,7 +29,10 @@
             "mappage" : "https://urtjumpmaps.com/mapinfo/{}",
             "levelshot" : "https://urtjumpmaps.com/static/imgs/lvlshots/{}.jpg"
         },
-        "apikey" : "APIKEY_ASK_TO_ULBENS"
+        "apikey" : "APIKEY_ASK_TO_ULBENS",
+        "global-message-apikey" : [
+            "example"
+        ]
     },
     "uvicorn" : {
         "url" : "localhost",

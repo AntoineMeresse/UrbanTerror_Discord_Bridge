@@ -33,6 +33,8 @@ class BridgeConfig():
         self.port : int = None
         self.ws_url : str = None
         self.domain : str = None
+
+        self.globalChatKeys = list()
         
         self.serverAdressDict : Dict[str, UrtDiscordServer] = dict()
         self.channelIdDict : Dict[int, PyQuake3] = dict()
@@ -59,6 +61,7 @@ class BridgeConfig():
             self.mapinfoUrl = datas['api']['urls']['mapinfo']
             self.mappageUrl = datas['api']['urls']['mappage']
             self.levelshotUrl = datas['api']['urls']['levelshot']
+            self.globalChatKeys = datas['api']['global-message-apikey']
 
             self.mapfolder = datas['mapfolder']
             self.mapUploadChannelId = datas['mapUploadChannelId']
@@ -127,4 +130,8 @@ class BridgeConfig():
 
     def getWsUrl(self):
         return self.ws_url.replace(f"{self.url}:{self.port}", self.domain) if self.domain is not None else self.ws_url
+    
+    def isGlobalMessageApikey(self, key):
+        return key in self.globalChatKeys
+    
 

@@ -13,7 +13,7 @@ from src.BridgeConfig import BridgeConfig
 from src.DiscordClient import DiscordClient
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import DiscordMessage
-from src.RequestObjects import DemoInfos, DiscordMessageEmbed, PingInfos, ServerInfos
+from src.RequestObjects import DemoInfos, DiscordMessageEmbed, PingInfos, ServerInfos, ServerMessage
 from src.RateLimiter import RateLimiter
 
 import sys
@@ -129,6 +129,13 @@ async def getMapList(request: Request):
 @local.get("/maps/download/{mapname}")
 async def getMapListWithPattern(mapname: str):
     return {"matching" : getMapsWithPattern(mapname, bridgeConfig.mapfolder)}
+
+@app.post("/message/all", dependencies=[Depends(RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))])
+async def sendMessage(message: ServerMessage):
+    if (bridgeConfig.isGlobalMessageApikey(message.apikey)):
+        bridge.sendServerMessages(message)
+        return message.message
+    return "Not a correct apikey."
 
 app.mount('/local', local)
 

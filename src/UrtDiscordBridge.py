@@ -2,7 +2,7 @@ from queue import Queue
 import textwrap
 from threading import RLock
 
-from src.RequestObjects import DemoInfos, DiscordMessage, ServerInfos
+from src.RequestObjects import DemoInfos, DiscordMessage, ServerInfos, ServerMessage
 from src.BridgeConfig import BridgeConfig
 
 class UrtDiscordBridge():
@@ -68,4 +68,13 @@ class UrtDiscordBridge():
                 # server.rcon("Maps have been reloaded.")
             except:
                 print(f"{server.address}:{server.port} | Reloadmaps KO (Server probably down)")
+
+    def sendServerMessages(self, serverMessage : ServerMessage):
+        msg = f"^6[ALL] ^3{serverMessage.name}^7: {serverMessage.message}"
+        for server in self.bridgeConfig.channelIdDict.values():
+            if server.get_address() != serverMessage.serverAddress:
+                try:
+                    server.rcon(f"saybot {msg}")
+                except:
+                    pass
    

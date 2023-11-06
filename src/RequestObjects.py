@@ -10,6 +10,12 @@ class DiscordMessage(BaseModel):
     message :str
     team : Union[str, None]
 
+class ServerMessage(BaseModel):
+    serverAddress : str
+    message: str
+    name: str
+    apikey: str
+    
 class DemoInfos(BaseModel):
     serverAddress : str
     msg : str
