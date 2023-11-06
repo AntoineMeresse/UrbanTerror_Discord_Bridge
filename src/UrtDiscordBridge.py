@@ -70,11 +70,13 @@ class UrtDiscordBridge():
                 print(f"{server.address}:{server.port} | Reloadmaps KO (Server probably down)")
 
     def sendServerMessages(self, serverMessage : ServerMessage):
-        msg = f"^6[ALL] ^3{serverMessage.name}^7: {serverMessage.message}"
+        message = f"^6[ALL] ^3{serverMessage.name}^7: {serverMessage.message}"
         for server in self.bridgeConfig.channelIdDict.values():
             if server.get_address() != serverMessage.serverAddress:
                 try:
-                    server.rcon(f"saybot {msg}")
+                    msgs = textwrap.wrap(message, 70)
+                    for msg in msgs:
+                        server.rcon(f"saybot ^7{msg}")
                 except:
                     pass
    
