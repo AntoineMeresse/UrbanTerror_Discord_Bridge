@@ -278,7 +278,7 @@ class DiscordClient(discord.Client):
                     with open("logs/updateStatusServers_errors.txt", "a+") as fl:
                         fl.write(f"{datetime.datetime.now()} | Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
 
-    @tasks.loop(seconds=30)
+    @tasks.loop(seconds=40)
     async def set_discord_server_infos_task(self):
         await self.updateStatusServers()
 
