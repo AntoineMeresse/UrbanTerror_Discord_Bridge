@@ -180,7 +180,7 @@ class DiscordClient(discord.Client):
         else:
             author = str(message.author).split("#")[0]
             att = ", ".join([f"{x.filename}" for x in message.attachments])
-            f = "^6Files^7" if len(att) > 1 else "^6Files^7"
+            f = "^6Files^7" if len(att) > 1 else "^6File^7"
             attMessage = f" [{f}: {att}]" if len(att) > 0 else ""
             messageToDisplay = f"{message.content}{attMessage}"
             self.urt_discord_bridge.sendMessage(msg_channelId, f'[{author}]', messageToDisplay)
