@@ -179,7 +179,10 @@ class DiscordClient(discord.Client):
             return
         else:
             author = str(message.author).split("#")[0]
-            self.urt_discord_bridge.sendMessage(msg_channelId, f'[{author}]', message.content)
+            att = ", ".join([f"{x.filename} ({x.content_type})" for x in message.attachments])
+            f = "Files" if len(att) > 1 else "File"
+            messageToDisplay = f"{message.content} [{f}: {att}]"
+            self.urt_discord_bridge.sendMessage(msg_channelId, f'[{author}]', messageToDisplay)
 
     def setupChannels(self) -> bool:
         cpt = 0
