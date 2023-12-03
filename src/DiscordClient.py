@@ -179,7 +179,7 @@ class DiscordClient(discord.Client):
             return
         else:
             author = str(message.author).split("#")[0]
-            att = ", ".join([f"{x.filename} ({x.content_type})" for x in message.attachments])
+            att = ", ".join([f"{x.filename}" for x in message.attachments])
             f = "^6Files^7" if len(att) > 1 else "^6Files^7"
             attMessage = f" [{f}: {att}]" if len(att) > 0 else ""
             messageToDisplay = f"{message.content}{attMessage}"
