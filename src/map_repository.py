@@ -15,7 +15,10 @@ def getAllMaps(mapfolder):
 
 def getRandomMap(mapfolder):
     maps = getAllMaps(mapfolder)
-    return choice(maps)
+    if (len(maps) > 0): 
+        return choice(maps).replace(".pk3", "")
+    else:
+        return ""
 
 def getMapsWithPattern(pattern, mapfolder):
     return [x.replace(".pk3", "") for x in getAllMaps(mapfolder) if pattern in x]
