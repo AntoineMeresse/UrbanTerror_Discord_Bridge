@@ -8,13 +8,14 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Depends, FastAPI, Request
 
 from typing import Tuple
-from src.map_repository import getAllMaps, getMapPath, getMapsWithPattern, getRandomMap
+from src.map_repository import getAllMaps, getMapPath, getMapsWithPattern
 from src.BridgeConfig import BridgeConfig
 from src.DiscordClient import DiscordClient
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import DiscordMessage
 from src.RequestObjects import DemoInfos, DiscordMessageEmbed, PingInfos, ServerInfos, ServerMessage
 from src.RateLimiter import RateLimiter
+from src.ApiCalls import getRandomMap
 
 import sys
 
@@ -132,7 +133,7 @@ async def getMapListWithPattern(mapname: str):
 
 @local.get("/maps/random")
 async def getMapListWithPattern():
-    return getRandomMap(bridgeConfig.mapfolder)
+    return await getRandomMap(bridgeConfig.apikey)
 
 @app.post("/message/all", dependencies=[Depends(RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))])
 async def sendMessage(message: ServerMessage):

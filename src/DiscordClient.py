@@ -8,7 +8,7 @@ import zipfile
 
 from typing import Any, Union
 from lib.py3quake3 import PyQuake3
-from src.map_repository import getRandomMap
+from src.ApiCalls import getRandomMap
 from src.ServerButtons import ServerButtons
 from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
@@ -83,10 +83,13 @@ class DiscordClient(discord.Client):
                 await message.channel.send("You are not an [UJM] Admin")
             return
         elif (cmd in ["!roll", "!random"]):
-            mapname = getRandomMap(self.urt_discord_bridge.bridgeConfig.mapfolder)
-            emb = await generateEmbed(mapname, None, None, self.urt_discord_bridge.bridgeConfig)
-            emb.title = "Random map: " + emb.title
-            await message.channel.send(embed=emb)
+            mapname = await getRandomMap(self.urt_discord_bridge.bridgeConfig.apikey)
+            if mapname is not None:
+                emb = await generateEmbed(mapname, None, None, self.urt_discord_bridge.bridgeConfig)
+                emb.title = "Random map: " + emb.title
+                await message.channel.send(embed=emb)
+            else:
+                await message.channel.send("Error trying to find a random map")
         elif (cmd == "!help"):
             cmds = [
                 "Available commands :",

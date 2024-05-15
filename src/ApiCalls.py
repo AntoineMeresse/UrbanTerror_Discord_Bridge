@@ -1,6 +1,7 @@
 import aiohttp
 
 from src.BridgeConfig import BridgeConfig
+import random
 
 async def getApiInfos(mapName, url, apikey):
     if (mapName is not None and mapName != ""):
@@ -36,3 +37,16 @@ async def getServerStatus(ws_url : str, address : str):
                 return res
             except:
                 return False
+            
+async def getRandomMap(apikey) -> str: 
+    print("Random map")
+    url = 'https://urtjumpmaps.com/mapinfo/getallmapnames'
+    p = {'apikey': apikey}
+
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=2)) as session:
+        async with session.get(url=url, json=p) as response:
+            try:
+                maps = await response.json()
+                return random.choice(maps)
+            except:
+                return None
