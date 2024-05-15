@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import os
-import re
 import subprocess
 import discord
 from discord.ext import tasks
@@ -9,6 +8,7 @@ import zipfile
 
 from typing import Any, Union
 from lib.py3quake3 import PyQuake3
+from src.map_repository import getRandomMap
 from src.ServerButtons import ServerButtons
 from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
@@ -82,6 +82,11 @@ class DiscordClient(discord.Client):
             else:
                 await message.channel.send("You are not an [UJM] Admin")
             return
+        elif (cmd in ["!roll", "!random"]):
+            mapname = getRandomMap(self.urt_discord_bridge.bridgeConfig.mapfolder)
+            emb = await generateEmbed(mapname, None, None, self.urt_discord_bridge.bridgeConfig)
+            emb.title = "Random map: " + emb.title
+            await message.channel.send(embed=emb)
         elif (cmd == "!help"):
             cmds = [
                 "Available commands :",
@@ -115,6 +120,7 @@ class DiscordClient(discord.Client):
             elif (cmd == "!status"):
                 emb = await generateEmbed(mapname, None, players, self.urt_discord_bridge.bridgeConfig)
                 await message.channel.send(embed=emb)
+               
 
     async def on_message_handle_fileUpload(self, message: discord.Message, msg_channelId):
         if (msg_channelId == self.urt_discord_bridge.bridgeConfig.mapUploadChannelId):

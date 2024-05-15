@@ -8,7 +8,7 @@ from src.BridgeConfig import BridgeConfig
 class UrtDiscordBridge():
 
     def __init__(self, bridgeConfig : BridgeConfig = None) -> None:
-        self.bridgeConfig = bridgeConfig
+        self.bridgeConfig : BridgeConfig = bridgeConfig
         
         self.messages = Queue()
         self.demos = Queue()
