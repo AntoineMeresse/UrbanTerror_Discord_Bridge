@@ -39,7 +39,6 @@ async def getServerStatus(ws_url : str, address : str):
                 return False
             
 async def getRandomMap(apikey) -> str: 
-    print("Random map")
     url = 'https://urtjumpmaps.com/mapinfo/getallmapnames'
     p = {'apikey': apikey}
 
