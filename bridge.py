@@ -120,7 +120,7 @@ async def getStatusLocal() -> list:
             RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))]
         )
 async def getMap(mapfile : str):
-    return FileResponse(path=getMapPath(mapfile, bridgeConfig.mapfolder))
+    return FileResponse(path=getMapPath(mapfile, bridgeConfig.mapfolder), media_type="application/octet-stream")
 
 @app.get("/q3ut4", dependencies=[Depends(RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))])
 async def getMapList(request: Request):
