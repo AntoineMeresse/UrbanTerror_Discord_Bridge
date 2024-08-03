@@ -25,6 +25,7 @@ class DiscordClient(discord.Client):
 
     async def on_ready(self):
         print("----------------> Bridge Online <----------------")
+        self.urt_discord_bridge.reloadMapInfos()
 
     def getServInfos(self, channelId) -> str:
         for serv in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():

@@ -69,6 +69,15 @@ class UrtDiscordBridge():
             except:
                 print(f"{server.address}:{server.port} | Reloadmaps KO (Server probably down)")
 
+    def reloadMapInfos(self):
+        for server in self.bridgeConfig.channelIdDict.values():
+            try:
+                server.rcon("customCmd ReloadApi")
+                print(f"{server.address}:{server.port} | customCmd OK")
+                # server.rcon("Maps have been reloaded.")
+            except:
+                print(f"{server.address}:{server.port} | customCmd KO (Server probably down)")
+
     def sendServerMessages(self, serverMessage : ServerMessage):
         message = f"^6[ALL] ^3{serverMessage.name}^7: {serverMessage.message}"
         for server in self.bridgeConfig.channelIdDict.values():
