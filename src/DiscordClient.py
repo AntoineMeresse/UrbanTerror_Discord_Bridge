@@ -146,7 +146,7 @@ class DiscordClient(discord.Client):
                                 bsppath = f"maps/{bspname}"
                                 if (bsppath in file_list):
                                     url = f"https://{self.urt_discord_bridge.bridgeConfig.getWsUrl()}/q3ut4/{filename}"
-                                    await message.channel.send(f"`{filename}` has been successfuly uploaded. Download link : {url}")
+                                    await message.channel.send(f"`{filename}` has been successfully uploaded. Download link : {url}")
                                     if len(msg) > 0:
                                         channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.mappingChannelId)
                                         if (channel is not None):
@@ -288,6 +288,7 @@ class DiscordClient(discord.Client):
                         emb = await generateEmbed(serv.mapname, None, serv.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
                                     servername=serv.servername, servAvailable=available, connectMessage=f"/connect {serv.displayedAddress}")
                         await serv.status.edit(embed=emb, view=ServerButtons(serv.mapname, self.urt_discord_bridge.bridgeConfig))
+                        await asyncio.sleep(10)
                 except asyncio.TimeoutError:
                     with open("logs/updateStatusServers_errors.txt", "a+") as fl:
                         fl.write(f"{datetime.datetime.now()} | Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
