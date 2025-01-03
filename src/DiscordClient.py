@@ -157,7 +157,8 @@ class DiscordClient(discord.Client):
                                 
                                 if(errorMsg == ""):
                                     url = f"https://{self.urt_discord_bridge.bridgeConfig.getWsUrl()}/q3ut4/{filename}"
-                                    await message.channel.send(f"`{filename}` has been successfully uploaded. Download link : {url}")
+                                    cleanname = filename.replace(".pk3", "")
+                                    await message.channel.send(f"`{filename}` has been successfully uploaded.\n- Download link: {url}\n- In UJM servers: `!mapget {cleanname}`")
                                     if len(msg) > 0 and "!force" not in msg:
                                         channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.mappingChannelId)
                                         if (channel is not None):
