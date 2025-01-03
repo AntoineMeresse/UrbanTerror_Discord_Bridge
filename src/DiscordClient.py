@@ -148,12 +148,12 @@ class DiscordClient(discord.Client):
                                 progressiveImages = getProgressiveImages(path)
                                 
                                 errorMsg = ""
-                                if ("!force") not in message: 
+                                if ("!force" not in msg): 
                                     if (not bsppath in file_list):
                                         errorMsg += f"\n- `{bsppath}` missing inside the pk3."
                                     
                                     if (len(progressiveImages) > 0):
-                                        errorMsg += f"\n- Progressive image(s) [{len(progressiveImages)}]: `{progressiveImages}`"
+                                        errorMsg += f"\n- Progressive image(s) [{len(progressiveImages)}]: `{progressiveImages}`. Can be force by uploading the file using `!force`"
                                 
                                 if(errorMsg == ""):
                                     url = f"https://{self.urt_discord_bridge.bridgeConfig.getWsUrl()}/q3ut4/{filename}"
