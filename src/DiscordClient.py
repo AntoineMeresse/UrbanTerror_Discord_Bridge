@@ -148,16 +148,17 @@ class DiscordClient(discord.Client):
                                 progressiveImages = getProgressiveImages(path)
                                 
                                 errorMsg = ""
-                                if (not bsppath in file_list):
-                                    errorMsg += f"\n  - `{bsppath}` missing inside the pk3."
-                                
-                                if (len(progressiveImages) > 0):
-                                    errorMsg += f"\n  - Progressive image(s): `{progressiveImages}`"
+                                if ("!force") not in message: 
+                                    if (not bsppath in file_list):
+                                        errorMsg += f"\n- `{bsppath}` missing inside the pk3."
+                                    
+                                    if (len(progressiveImages) > 0):
+                                        errorMsg += f"\n- Progressive image(s) [{len(progressiveImages)}]: `{progressiveImages}`"
                                 
                                 if(errorMsg == ""):
                                     url = f"https://{self.urt_discord_bridge.bridgeConfig.getWsUrl()}/q3ut4/{filename}"
                                     await message.channel.send(f"`{filename}` has been successfully uploaded. Download link : {url}")
-                                    if len(msg) > 0:
+                                    if len(msg) > 0 and "!force" not in msg:
                                         channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.mappingChannelId)
                                         if (channel is not None):
                                             await channel.send(content=msg, file = discord.File(fp=path))
@@ -165,7 +166,7 @@ class DiscordClient(discord.Client):
                                     file_exists = os.path.isfile(path)
                                     if file_exists:
                                         os.remove(path)
-                                    await message.channel.send(f"{filename} has not been uploaded.{errorMsg}") 
+                                    await message.channel.send(f"`{filename}` has not been uploaded: {errorMsg}") 
                     else:
                         await message.channel.send("Please provide a pk3 file")
             else:
