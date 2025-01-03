@@ -12,7 +12,7 @@ from src.ApiCalls import getRandomMap
 from src.ServerButtons import ServerButtons
 from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
-from src.utils import convertMessage, discordBlock, generateEmbed, generateEmbedToprun
+from src.utils import convertMessage, discordBlock, generateEmbed, generateEmbedToprun, getProgressiveImages
 from src.ApiCalls import getServerStatus
 
 class DiscordClient(discord.Client):
@@ -140,11 +140,21 @@ class DiscordClient(discord.Client):
                             await message.channel.send(f"{filename} is already on the repository.```yaml\nIf you want to replace it :\n - !delete {filename}\n - Upload it again\n```") 
                         else:
                             await uploadedFile.save(path)
+
                             with zipfile.ZipFile(path, 'r') as zip_file:
                                 file_list = zip_file.namelist()
                                 bspname = filename.replace(".pk3", ".bsp")
                                 bsppath = f"maps/{bspname}"
-                                if (bsppath in file_list):
+                                progressiveImages = getProgressiveImages(path)
+                                
+                                errorMsg = ""
+                                if (not bsppath in file_list):
+                                    errorMsg += f"`{bsppath}` missing inside the pk3."
+                                
+                                if (len(progressiveImages) > 0):
+                                    errorMsg += f"Progressive image(s): {progressiveImages}."
+                                
+                                if(errorMsg == ""):
                                     url = f"https://{self.urt_discord_bridge.bridgeConfig.getWsUrl()}/q3ut4/{filename}"
                                     await message.channel.send(f"`{filename}` has been successfully uploaded. Download link : {url}")
                                     if len(msg) > 0:
@@ -155,7 +165,7 @@ class DiscordClient(discord.Client):
                                     file_exists = os.path.isfile(path)
                                     if file_exists:
                                         os.remove(path)
-                                    await message.channel.send(f"{filename} has not been uploaded.\n`{bsppath}` missing inside the pk3.") 
+                                    await message.channel.send(f"{filename} has not been uploaded. Reason: {errorMsg}\n") 
                     else:
                         await message.channel.send("Please provide a pk3 file")
             else:
@@ -165,6 +175,8 @@ class DiscordClient(discord.Client):
                     if (cmd.lower() == "!delete"):
                         if len(s) == 2:
                             filename : str = s[1]
+                            if ".pk3" not in filename:
+                                filename = filename + ".pk3"
                             path = f"{self.urt_discord_bridge.bridgeConfig.mapfolder}/{filename}"
                             file_exists = os.path.isfile(path)
                             if file_exists:
@@ -283,12 +295,12 @@ class DiscordClient(discord.Client):
         for serv in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
             if (serv.status is not None):
                 try:
+                    await asyncio.sleep(5)
                     async with asyncio.timeout(10):
                         available = await getServerStatus(self.urt_discord_bridge.bridgeConfig.ws_url,serv.address)
                         emb = await generateEmbed(serv.mapname, None, serv.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
                                     servername=serv.servername, servAvailable=available, connectMessage=f"/connect {serv.displayedAddress}")
                         await serv.status.edit(embed=emb, view=ServerButtons(serv.mapname, self.urt_discord_bridge.bridgeConfig))
-                        await asyncio.sleep(10)
                 except asyncio.TimeoutError:
                     with open("logs/updateStatusServers_errors.txt", "a+") as fl:
                         fl.write(f"{datetime.datetime.now()} | Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")

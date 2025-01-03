@@ -3,3 +3,4 @@ fastapi
 uvicorn[standard]
 aiohttp
 jinja2
+pillow

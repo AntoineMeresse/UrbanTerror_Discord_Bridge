@@ -9,6 +9,9 @@ from src.BridgeConfig import BridgeConfig
 
 from src.RequestObjects import DiscordMessage, Player
 
+import zipfile
+from PIL import Image
+
 async def generateEmbed(mapname, mapinfos, players, bridgeConfig : BridgeConfig, updated : datetime = None, servername : str = "", 
                         servAvailable : bool = True, connectMessage : str = None) -> discord.Embed:
     emb = discord.Embed(
@@ -138,3 +141,18 @@ def convertMessage(discordMessage : DiscordMessage) -> str:
     team = discordMessage.team
     prefix = team if (team is not None) else ""
     return decolorstring(f"{prefix}{discordMessage.message}")
+
+def getProgressiveImages(file) -> list[str]:
+    res = list()
+    pk3 = zipfile.ZipFile(file)
+    files = pk3.infolist()
+    for f in files:
+        if not f.is_dir() and not f.filename.endswith((".bsp", ".map", ".shader")):
+            try:
+                currentFile = pk3.open(f)
+                img = Image.open(currentFile)
+                if "progressive" in img.info: 
+                    res.append(f.filename)
+            except:
+                pass
+    return res
