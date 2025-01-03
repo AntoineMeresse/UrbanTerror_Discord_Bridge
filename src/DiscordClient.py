@@ -149,10 +149,10 @@ class DiscordClient(discord.Client):
                                 
                                 errorMsg = ""
                                 if (not bsppath in file_list):
-                                    errorMsg += f"`{bsppath}` missing inside the pk3."
+                                    errorMsg += f"\n  - `{bsppath}` missing inside the pk3."
                                 
                                 if (len(progressiveImages) > 0):
-                                    errorMsg += f"Progressive image(s): {progressiveImages}."
+                                    errorMsg += f"\n  - Progressive image(s): `{progressiveImages}`"
                                 
                                 if(errorMsg == ""):
                                     url = f"https://{self.urt_discord_bridge.bridgeConfig.getWsUrl()}/q3ut4/{filename}"
@@ -165,7 +165,7 @@ class DiscordClient(discord.Client):
                                     file_exists = os.path.isfile(path)
                                     if file_exists:
                                         os.remove(path)
-                                    await message.channel.send(f"{filename} has not been uploaded. Reason: {errorMsg}\n") 
+                                    await message.channel.send(f"{filename} has not been uploaded.{errorMsg}") 
                     else:
                         await message.channel.send("Please provide a pk3 file")
             else:
