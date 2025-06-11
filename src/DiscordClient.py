@@ -296,18 +296,27 @@ class DiscordClient(discord.Client):
     async def updateStatusServers(self):
         for serv in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
             if (serv.status is not None):
+                # await asyncio.sleep(5)
                 try:
-                    await asyncio.sleep(5)
                     async with asyncio.timeout(10):
                         available = await getServerStatus(self.urt_discord_bridge.bridgeConfig.ws_url,serv.address)
                         emb = await generateEmbed(serv.mapname, None, serv.players, self.urt_discord_bridge.bridgeConfig, updated=datetime.datetime.now(),
                                     servername=serv.servername, servAvailable=available, connectMessage=f"/connect {serv.displayedAddress}")
                         await serv.status.edit(embed=emb, view=ServerButtons(serv.mapname, self.urt_discord_bridge.bridgeConfig))
-                except asyncio.TimeoutError:
+                except asyncio.TimeoutError as e:
                     with open("logs/updateStatusServers_errors.txt", "a+") as fl:
-                        fl.write(f"{datetime.datetime.now()} | Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
+                        fl.write(f"{datetime.datetime.now()} | [asyncio.TimeoutError ({str(e)})] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id} \n")
+                except discord.NotFound as e:
+                    with open("logs/updateStatusServers_errors.txt", "a+") as fl:
+                        fl.write(f"{datetime.datetime.now()} | [discord.NotFound ({str(e)})] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
+                except discord.HTTPException as e:
+                    with open("logs/updateStatusServers_errors.txt", "a+") as fl:
+                        fl.write(f"{datetime.datetime.now()} | [discord.HTTPException ({str(e)})] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
+                except Exception as e:
+                    with open("logs/updateStatusServers_errors.txt", "a+") as fl:
+                        fl.write(f"{datetime.datetime.now()} | [Other ({str(e)})] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
 
-    @tasks.loop(seconds=40)
+    @tasks.loop(seconds=30)
     async def set_discord_server_infos_task(self):
         await self.updateStatusServers()
 
