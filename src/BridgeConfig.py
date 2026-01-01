@@ -92,9 +92,10 @@ class BridgeConfig():
             self.restartWithChannelId[discordChannelId] = serverInfos["restart"]
 
     def getChannel(self, serverAdress):
-        # print(f"Get channel for : {serverAdress}")
+        print(f"Get channel for : {serverAdress}")
         if (serverAdress in self.serverAdressDict):
             return self.serverAdressDict[serverAdress].getChannel()
+        print("Channel not found")
         return None
 
     def __str__(self) -> str:

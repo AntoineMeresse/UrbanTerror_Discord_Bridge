@@ -254,6 +254,10 @@ class DiscordClient(discord.Client):
                                 except asyncio.TimeoutError:
                                     with open("logs/sendMessage_errors.txt", "a+") as fl:
                                         fl.write(f"{datetime.datetime.now()} | Error to send message : {msg} (server : {currentMessage.serverAddress})\n\n") 
+                                except Exception as e:
+                                    print("Error sending message to discord. Cause: "+str(e))
+                        else:
+                            print("Could not find a channel. (None)")
                 await asyncio.sleep(self.interval)
         else:
             print("There was no valid channels found.")
@@ -266,18 +270,24 @@ class DiscordClient(discord.Client):
                 queue = self.urt_discord_bridge.getListDemos()
                 while (not queue.empty()):
                     demo : DemoInfos = queue.get(timeout=2)
-                    serv_channel = self.urt_discord_bridge.bridgeConfig.getChannel(demo.serverAddress)
-                    msg = demo.msg
-                    if (serv_channel is not None):
-                        msg = f"({serv_channel.jump_url}) " + msg
-                    try:
-                        async with asyncio.timeout(10):
-                            post : discord.Message = await channel.send(msg, file = discord.File(fp=demo.path, filename=demo.name))
-                            if (serv_channel is not None):
-                                await serv_channel.send(f"{demo.chatMessage} {post.jump_url}")
-                    except asyncio.TimeoutError:
+                    if os.path.isfile(demo.path):
+                        serv_channel = self.urt_discord_bridge.bridgeConfig.getChannel(demo.serverAddress)
+                        msg = demo.msg
+                        if (serv_channel is not None):
+                            msg = f"({serv_channel.jump_url}) " + msg
+                        try:
+                            async with asyncio.timeout(10):
+                                post : discord.Message = await channel.send(msg, file = discord.File(fp=demo.path, filename=demo.name))
+                                if (serv_channel is not None):
+                                    await serv_channel.send(f"{demo.chatMessage} {post.jump_url}")
+                        except asyncio.TimeoutError:
+                            with open("logs/sendDemoRuns_errors.txt", "a+") as fl:
+                                fl.write(f"{datetime.datetime.now()} | Error uploading demo on discord : {demo}\n\n")
+                        except Exception as e:
+                            print("Error sending demos to discord. Cause: "+str(e))
+                    else:
                         with open("logs/sendDemoRuns_errors.txt", "a+") as fl:
-                            fl.write(f"{datetime.datetime.now()} | Error uploading demo on discord : {demo}\n\n")    
+                            fl.write(f"{datetime.datetime.now()} | Error uploading demo on discord : {demo}. File doesn't exist: {demo.path}\n\n")
                 await asyncio.sleep(self.interval)
         else:
             print("Could not find channel for demos")
