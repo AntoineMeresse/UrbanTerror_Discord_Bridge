@@ -40,6 +40,7 @@ class UrtDiscordServer():
         nbPlayers = len(self.players)
         return {
             self.servername : {
+                "ip" : self.displayedAddress,
                 "mapname" : self.mapname,
                 "nbPlayers" : nbPlayers,
                 "ingame" : ingame,
