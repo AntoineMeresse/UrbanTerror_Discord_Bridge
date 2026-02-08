@@ -142,6 +142,13 @@ async def sendMessage(message: ServerMessage):
         return message.message
     return "Not a correct apikey."
 
+@app.post("/message", dependencies=[Depends(RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))])
+async def sendMessage(message: ServerMessage):
+    if (bridgeConfig.isGlobalMessageApikey(message.apikey)):
+        info = bridge.sendServerMessage(message)
+        return info
+    return "Not a correct apikey."
+
 app.mount('/local', local)
 
 if __name__ == "__main__":

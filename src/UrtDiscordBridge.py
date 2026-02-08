@@ -88,4 +88,16 @@ class UrtDiscordBridge():
                         server.rcon(f"saybot ^7{msg}")
                 except:
                     pass
-   
+
+    def sendServerMessage(self, serverMessage : ServerMessage) -> str:
+        message = f"^3{serverMessage.name}^7: {serverMessage.message}"
+        for server in self.bridgeConfig.channelIdDict.values():
+            if server.get_address() == serverMessage.serverAddress:
+                try:
+                    msgs = textwrap.wrap(message, 70)
+                    for msg in msgs:
+                        server.rcon(f"saybot ^7{msg}")
+                    return "Message sent to server {serverMessage.serverAddress}"
+                except:
+                    pass
+        return f"Server {serverMessage.serverAddress} not a valid server for bridge."   
