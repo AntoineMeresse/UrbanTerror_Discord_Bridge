@@ -12,14 +12,14 @@ async def getApiInfos(mapName, url, apikey):
             "mapname" : mapName,
             "apikey": apikey
         }
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=2)) as session:
-            async with session.post(url=url, json=p) as response:
-                try:
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=2)) as session:
+                async with session.post(url=url, json=p) as response:
                     res = await response.json()
                     return res
-                except Exception as e:
-                    logger.warning(f"Failed to parse API response for {mapName}: {e}")
-                    return None
+        except Exception as e:
+            logger.warning(f"Failed to fetch API response for {mapName}: {e}")
+            return None
     return None
 
 async def getMapInfo(mapName, bridgeConfig : BridgeConfig):
