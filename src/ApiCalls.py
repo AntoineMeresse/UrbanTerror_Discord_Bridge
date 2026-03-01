@@ -30,13 +30,16 @@ async def getServerStatus(ws_url : str, address : str):
     p = {
         "serverAddress" : address
     }
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=2)) as session:
-        async with session.post(url=url, json=p) as response:
-            try:
-                res = await response.json()
-                return res
-            except:
-                return False
+    try:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=2)) as session:
+            async with session.post(url=url, json=p) as response:
+                try:
+                    res = await response.json()
+                    return res
+                except:
+                    return False
+    except:
+        return False
             
 async def getRandomMap(apikey) -> str: 
     url = 'https://urtjumpmaps.com/mapinfo/getallmapnames'

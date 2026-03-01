@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import os
+import queue
 import subprocess
 import discord
 from discord.ext import tasks
@@ -231,10 +232,14 @@ class DiscordClient(discord.Client):
         foundChannel = self.setupChannels()
         if (foundChannel):
             while not self.is_closed():
-                queue = self.urt_discord_bridge.getListMessages()
-                while (not queue.empty()):
-                    with self.urt_discord_bridge.messagesLock:
-                        currentMessage : Union[DiscordMessage, DiscordMessageEmbed] = queue.get(timeout=2)
+                try:
+                    msg_queue = self.urt_discord_bridge.getListMessages()
+                    while (not msg_queue.empty()):
+                        with self.urt_discord_bridge.messagesLock:
+                            try:
+                                currentMessage : Union[DiscordMessage, DiscordMessageEmbed] = msg_queue.get_nowait()
+                            except queue.Empty:
+                                break
                         channel = self.urt_discord_bridge.bridgeConfig.getChannel(currentMessage.serverAddress)
                         if (channel is not None):
                             if type(currentMessage) == DiscordMessageEmbed:
@@ -245,19 +250,22 @@ class DiscordClient(discord.Client):
                                         await channel.send(embed=emb)
                                 except asyncio.TimeoutError:
                                     with open("logs/sendEmbed_errors.txt", "a+") as fl:
-                                        fl.write(f"{datetime.datetime.now()} | Error to send embed change map for : {currentMessage.mapname} (server : {currentMessage.serverAddress})\n\n") 
-                            elif (type(currentMessage == DiscordMessage)):
+                                        fl.write(f"{datetime.datetime.now()} | Error to send embed change map for : {currentMessage.mapname} (server : {currentMessage.serverAddress})\n\n")
+                            elif isinstance(currentMessage, DiscordMessage):
                                 msg = convertMessage(currentMessage)
                                 try:
                                     async with asyncio.timeout(10):
                                         await channel.send(msg)
                                 except asyncio.TimeoutError:
                                     with open("logs/sendMessage_errors.txt", "a+") as fl:
-                                        fl.write(f"{datetime.datetime.now()} | Error to send message : {msg} (server : {currentMessage.serverAddress})\n\n") 
+                                        fl.write(f"{datetime.datetime.now()} | Error to send message : {msg} (server : {currentMessage.serverAddress})\n\n")
                                 except Exception as e:
                                     print("Error sending message to discord. Cause: "+str(e))
                         else:
                             print("Could not find a channel. (None)")
+                except Exception as e:
+                    with open("logs/sendMessage_errors.txt", "a+") as fl:
+                        fl.write(f"{datetime.datetime.now()} | Unexpected error in send_message_task: {e}\n")
                 await asyncio.sleep(self.interval)
         else:
             print("There was no valid channels found.")
@@ -267,41 +275,56 @@ class DiscordClient(discord.Client):
         channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.demoChannelId)
         if (channel is not None):
             while not self.is_closed():
-                queue = self.urt_discord_bridge.getListDemos()
-                while (not queue.empty()):
-                    demo : DemoInfos = queue.get(timeout=2)
-                    if os.path.isfile(demo.path):
-                        serv_channel = self.urt_discord_bridge.bridgeConfig.getChannel(demo.serverAddress)
-                        msg = demo.msg
-                        if (serv_channel is not None):
-                            msg = f"({serv_channel.jump_url}) " + msg
+                try:
+                    demo_queue = self.urt_discord_bridge.getListDemos()
+                    while (not demo_queue.empty()):
                         try:
-                            async with asyncio.timeout(10):
-                                post : discord.Message = await channel.send(msg, file = discord.File(fp=demo.path, filename=demo.name))
-                                if (serv_channel is not None):
-                                    await serv_channel.send(f"{demo.chatMessage} {post.jump_url}")
-                        except asyncio.TimeoutError:
+                            demo : DemoInfos = demo_queue.get_nowait()
+                        except queue.Empty:
+                            break
+                        if os.path.isfile(demo.path):
+                            serv_channel = self.urt_discord_bridge.bridgeConfig.getChannel(demo.serverAddress)
+                            msg = demo.msg
+                            if (serv_channel is not None):
+                                msg = f"({serv_channel.jump_url}) " + msg
+                            try:
+                                async with asyncio.timeout(10):
+                                    post : discord.Message = await channel.send(msg, file = discord.File(fp=demo.path, filename=demo.name))
+                                    if (serv_channel is not None):
+                                        await serv_channel.send(f"{demo.chatMessage} {post.jump_url}")
+                            except asyncio.TimeoutError:
+                                with open("logs/sendDemoRuns_errors.txt", "a+") as fl:
+                                    fl.write(f"{datetime.datetime.now()} | Error uploading demo on discord : {demo}\n\n")
+                            except Exception as e:
+                                print("Error sending demos to discord. Cause: "+str(e))
+                        else:
                             with open("logs/sendDemoRuns_errors.txt", "a+") as fl:
-                                fl.write(f"{datetime.datetime.now()} | Error uploading demo on discord : {demo}\n\n")
-                        except Exception as e:
-                            print("Error sending demos to discord. Cause: "+str(e))
-                    else:
-                        with open("logs/sendDemoRuns_errors.txt", "a+") as fl:
-                            fl.write(f"{datetime.datetime.now()} | Error uploading demo on discord : {demo}. File doesn't exist: {demo.path}\n\n")
+                                fl.write(f"{datetime.datetime.now()} | Error uploading demo on discord : {demo}. File doesn't exist: {demo.path}\n\n")
+                except Exception as e:
+                    with open("logs/sendDemoRuns_errors.txt", "a+") as fl:
+                        fl.write(f"{datetime.datetime.now()} | Unexpected error in send_demos_task: {e}\n")
                 await asyncio.sleep(self.interval)
         else:
             print("Could not find channel for demos")
 
     async def deleteStatusMessage(self, channel : discord.TextChannel):
-        messages = [message async for message in channel.history(limit=None)]
-        for m in messages:
-            if (m.author == self.user):
-                await m.delete()
-        
+        try:
+            messages = [message async for message in channel.history(limit=None)]
+            for m in messages:
+                if (m.author == self.user):
+                    await m.delete()
+        except Exception as e:
+            with open("logs/updateStatusServers_errors.txt", "a+") as fl:
+                fl.write(f"{datetime.datetime.now()} | Error deleting status messages: {e}\n")
+
     async def initStatusMessage(self, channel : discord.TextChannel):
         for x in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
-            emb = await generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, servername=x.servername, servAvailable=False)
-            x.status = await channel.send(embed=emb)
+            try:
+                emb = await generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, servername=x.servername, servAvailable=False)
+                x.status = await channel.send(embed=emb)
+            except Exception as e:
+                with open("logs/updateStatusServers_errors.txt", "a+") as fl:
+                    fl.write(f"{datetime.datetime.now()} | Error initializing status message for {x.servername}: {e}\n")
                                       
     async def updateStatusServers(self):
         for serv in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
@@ -334,6 +357,10 @@ class DiscordClient(discord.Client):
     async def set_discord_server_infos_task_before(self):
         await self.wait_until_ready()
         channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.statusChannelId)
+        if channel is None:
+            print(f"Could not find status channel (id: {self.urt_discord_bridge.bridgeConfig.statusChannelId}). Status loop will not start.")
+            self.set_discord_server_infos_task.cancel()
+            return
         await self.deleteStatusMessage(channel)
         await self.initStatusMessage(channel)
                 
