@@ -1,11 +1,13 @@
 import aiohttp
+import random
 
 from src.BridgeConfig import BridgeConfig
-import random
+from src.logger import get_logger
+
+logger = get_logger("api")
 
 async def getApiInfos(mapName, url, apikey):
     if (mapName is not None and mapName != ""):
-        url = url
         p = {
             "mapname" : mapName,
             "apikey": apikey
@@ -15,7 +17,8 @@ async def getApiInfos(mapName, url, apikey):
                 try:
                     res = await response.json()
                     return res
-                except:
+                except Exception as e:
+                    logger.warning(f"Failed to parse API response for {mapName}: {e}")
                     return None
     return None
 
@@ -36,12 +39,14 @@ async def getServerStatus(ws_url : str, address : str):
                 try:
                     res = await response.json()
                     return res
-                except:
+                except Exception as e:
+                    logger.debug(f"Failed to parse server status response for {address}: {e}")
                     return False
-    except:
+    except Exception as e:
+        logger.debug(f"Failed to reach server status endpoint for {address}: {e}")
         return False
-            
-async def getRandomMap(apikey) -> str: 
+
+async def getRandomMap(apikey) -> str:
     url = 'https://urtjumpmaps.com/mapinfo/getallmapnames'
     p = {'apikey': apikey}
 
@@ -50,5 +55,6 @@ async def getRandomMap(apikey) -> str:
             try:
                 maps = await response.json()
                 return random.choice(maps)
-            except:
+            except Exception as e:
+                logger.warning(f"Failed to get random map: {e}")
                 return None

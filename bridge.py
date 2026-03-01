@@ -1,11 +1,13 @@
 import asyncio
+import os
 import discord
 import uvicorn
 
+from contextlib import asynccontextmanager
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 
 from typing import Tuple
 from src.map_repository import getAllMaps, getMapPath, getMapsWithPattern
@@ -40,49 +42,53 @@ def initDiscordBot() -> Tuple[BridgeConfig, UrtDiscordBridge, DiscordClient]:
     intents.message_content = True
     return bridgeConfig, bridge, DiscordClient(intents=intents, urt_discord_bridge=bridge)
 
-bridgeConfig, bridge, bot = initDiscordBot() 
+bridgeConfig, bridge, bot = initDiscordBot()
 
 ####################################### FastAPI #######################################
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    asyncio.create_task(bot.start(bridgeConfig.discordKey))
+    try:
+        await asyncio.wait_for(bot.wait_until_ready(), timeout=30)
+        logger.info(f"{bot.user} has connected to Discord!")
+    except asyncio.TimeoutError:
+        logger.warning("Discord bot did not connect within 30 seconds, continuing anyway")
+    yield
+
 templates = Jinja2Templates(directory="templates")
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 local = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'] ,
+    allow_origins=['*'],
     allow_methods=['GET'],
 )
 
 local.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost', bridgeConfig.url] ,
+    allow_origins=['http://localhost', bridgeConfig.url],
     allow_methods=['GET', 'POST'],
 )
 
 # In-memory storage for request counters
 request_counters = {}
 
-@app.on_event("startup")
-async def startup_event(): #this fucntion will run before the main API starts
-    asyncio.create_task(bot.start(bridgeConfig.discordKey))
-    await asyncio.sleep(4) #optional sleep for established connection with discord
-    logger.info(f"{bot.user} has connected to Discord!")
-
 @app.get("/")
 async def root():
     return RedirectResponse(url="/q3ut4")
 
-@app.get("/status")
-async def status(): 
+@app.get("/health")
+async def health():
     return {"Bridge working"}
 
 @local.get("/localstatus")
-async def status(): 
+async def localStatus():
     return {"Bridge local working"}
 
 @local.post("/message")
-async def sendMessage(message: DiscordMessage):
+async def localSendMessage(message: DiscordMessage):
     bridge.addMessages(message)
     return message
 
@@ -124,7 +130,12 @@ async def getStatusLocal() -> list:
             RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))]
         )
 async def getMap(mapfile : str):
-    return FileResponse(path=getMapPath(mapfile, bridgeConfig.mapfolder), media_type="application/octet-stream")
+    if not mapfile.endswith(".pk3"):
+        raise HTTPException(status_code=400, detail="Only .pk3 files are served")
+    path = getMapPath(mapfile, bridgeConfig.mapfolder)
+    if not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="Map not found")
+    return FileResponse(path=path, media_type="application/octet-stream")
 
 @app.get("/q3ut4", dependencies=[Depends(RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))])
 async def getMapList(request: Request):
@@ -132,15 +143,15 @@ async def getMapList(request: Request):
     return templates.TemplateResponse("maplist.html", {"request": request, "maps": maps, "number" : len(maps)})
 
 @local.get("/maps/download/{mapname}")
-async def getMapListWithPattern(mapname: str):
+async def searchMaps(mapname: str):
     return {"matching" : getMapsWithPattern(mapname, bridgeConfig.mapfolder)}
 
 @local.get("/maps/random")
-async def getMapListWithPattern():
+async def getRandomMapRoute():
     return await getRandomMap(bridgeConfig.apikey)
 
 @app.post("/message/all", dependencies=[Depends(RateLimiter(requests_limit=30, time_window=60, request_counters=request_counters, whitelisted_urls=[bridgeConfig.url]))])
-async def sendMessage(message: ServerMessage):
+async def sendMessageToAll(message: ServerMessage):
     if (bridgeConfig.isGlobalMessageApikey(message.apikey)):
         bridge.sendServerMessages(message)
         return message.message
