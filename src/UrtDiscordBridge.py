@@ -69,8 +69,8 @@ class UrtDiscordBridge():
                 server.rcon("reloadMaps")
                 logger.info(f"{server.address}:{server.port} | Reloadmaps OK")
                 # server.rcon("Maps have been reloaded.")
-            except:
-                logger.warning(f"{server.address}:{server.port} | Reloadmaps KO (Server probably down)")
+            except Exception as e:
+                logger.warning(f"{server.address}:{server.port} | Reloadmaps KO (Server probably down): {e}")
 
     def reloadMapInfos(self):
         for server in self.bridgeConfig.channelIdDict.values():
@@ -78,8 +78,8 @@ class UrtDiscordBridge():
                 server.rcon("customCmd ReloadApi")
                 logger.info(f"{server.address}:{server.port} | customCmd OK")
                 # server.rcon("Maps have been reloaded.")
-            except:
-                logger.warning(f"{server.address}:{server.port} | customCmd KO (Server probably down)")
+            except Exception as e:
+                logger.warning(f"{server.address}:{server.port} | customCmd KO (Server probably down): {e}")
 
     def sendServerMessages(self, serverMessage : ServerMessage):
         message = f"^6[ALL] ^3{serverMessage.name}^7: {serverMessage.message}"
@@ -89,8 +89,8 @@ class UrtDiscordBridge():
                     msgs = textwrap.wrap(message, 70)
                     for msg in msgs:
                         server.rcon(f"saybot ^7{msg}")
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"saybot failed for {server.get_address()}: {e}")
 
     def sendServerMessage(self, serverMessage : ServerMessage) -> str:
         message = f"^3{serverMessage.name}^7: {serverMessage.message}"
@@ -101,6 +101,6 @@ class UrtDiscordBridge():
                     for msg in msgs:
                         server.rcon(f"saybot ^7{msg}")
                     return "Message sent to server {serverMessage.serverAddress}"
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"saybot failed for {server.get_address()}: {e}")
         return f"Server {serverMessage.serverAddress} not a valid server for bridge."   

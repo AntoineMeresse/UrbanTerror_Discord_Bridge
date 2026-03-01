@@ -125,11 +125,11 @@ class BridgeConfig():
                         try:
                             servMap : str = status[1].split("\n")[0].split("map: ")[1].strip()
                             server.mapname = servMap
-                        except:
+                        except Exception:
                             pass
                     return True
-                except:
-                   pass
+                except Exception as e:
+                    logger.debug(f"RCON status failed for {infos.serverAddress}: {e}")
         return False
 
     def getWsUrl(self):

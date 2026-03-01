@@ -153,6 +153,6 @@ def getProgressiveImages(file) -> list[str]:
                 img = Image.open(currentFile)
                 if "progressive" in img.info: 
                     res.append(f.filename)
-            except:
+            except Exception:
                 pass
     return res
