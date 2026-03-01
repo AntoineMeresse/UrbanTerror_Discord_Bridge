@@ -4,6 +4,9 @@ import json
 from lib.py3quake3 import PyQuake3
 from src.UrtDiscordServer import UrtDiscordServer
 from src.RequestObjects import PingInfos
+from src.logger import get_logger
+
+logger = get_logger("config")
 
 class BridgeConfig():
 
@@ -43,7 +46,7 @@ class BridgeConfig():
         self.loadConfig()
 
     def loadConfig(self):
-        print(f"Load config : {self.config}")
+        logger.debug(f"Load config : {self.config}")
         with open(self.config) as file:
             datas = json.load(file)
             
@@ -92,10 +95,10 @@ class BridgeConfig():
             self.restartWithChannelId[discordChannelId] = serverInfos["restart"]
 
     def getChannel(self, serverAdress):
-        print(f"Get channel for : {serverAdress}")
+        logger.debug(f"Get channel for : {serverAdress}")
         if (serverAdress in self.serverAdressDict):
             return self.serverAdressDict[serverAdress].getChannel()
-        print("Channel not found")
+        logger.warning("Channel not found")
         return None
 
     def __str__(self) -> str:

@@ -1,5 +1,4 @@
 import asyncio
-import datetime
 import os
 import queue
 import subprocess
@@ -15,22 +14,23 @@ from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import convertMessage, discordBlock, generateEmbed, generateEmbedToprun, getProgressiveImages
 from src.ApiCalls import getServerStatus
+from src.logger import get_logger
+
+logger = get_logger("discord")
 
 class DiscordClient(discord.Client):
     def __init__(self, *, intents: discord.Intents, urt_discord_bridge = None, **options: Any) -> None:
         super().__init__(intents=intents, **options)
         self.urt_discord_bridge : UrtDiscordBridge = urt_discord_bridge
         self.interval = self.urt_discord_bridge.bridgeConfig.refresh
-        if not os.path.exists('logs'):
-            os.makedirs('logs')
 
     async def on_ready(self):
-        print("----------------> Bridge Online <----------------")
+        logger.info("----------------> Bridge Online <----------------")
         self.urt_discord_bridge.reloadMapInfos()
 
     def getServInfos(self, channelId) -> str:
         for serv in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
-            print(f"--> {serv.discordChannelId}")
+            logger.debug(f"--> {serv.discordChannelId}")
             if (serv.discordChannelId == channelId):
                 return serv.mapname, serv.players
         return None,None
@@ -219,7 +219,7 @@ class DiscordClient(discord.Client):
         return cpt > 0
 
     async def setup_hook(self) -> None:
-        print("setup_hook")
+        logger.debug("setup_hook")
         if (len(self.urt_discord_bridge.bridgeConfig.serverAdressDict) > 0):
             self.messageTask = self.loop.create_task(self.send_message_task())
         if (self.urt_discord_bridge.bridgeConfig.demoChannelId):
@@ -249,26 +249,23 @@ class DiscordClient(discord.Client):
                                     async with asyncio.timeout(10):
                                         await channel.send(embed=emb)
                                 except asyncio.TimeoutError:
-                                    with open("logs/sendEmbed_errors.txt", "a+") as fl:
-                                        fl.write(f"{datetime.datetime.now()} | Error to send embed change map for : {currentMessage.mapname} (server : {currentMessage.serverAddress})\n\n")
+                                    logger.error(f"Error to send embed change map for : {currentMessage.mapname} (server : {currentMessage.serverAddress})")
                             elif isinstance(currentMessage, DiscordMessage):
                                 msg = convertMessage(currentMessage)
                                 try:
                                     async with asyncio.timeout(10):
                                         await channel.send(msg)
                                 except asyncio.TimeoutError:
-                                    with open("logs/sendMessage_errors.txt", "a+") as fl:
-                                        fl.write(f"{datetime.datetime.now()} | Error to send message : {msg} (server : {currentMessage.serverAddress})\n\n")
+                                    logger.error(f"Error to send message : {msg} (server : {currentMessage.serverAddress})")
                                 except Exception as e:
-                                    print("Error sending message to discord. Cause: "+str(e))
+                                    logger.error("Error sending message to discord", exc_info=True)
                         else:
-                            print("Could not find a channel. (None)")
+                            logger.warning("Could not find a channel. (None)")
                 except Exception as e:
-                    with open("logs/sendMessage_errors.txt", "a+") as fl:
-                        fl.write(f"{datetime.datetime.now()} | Unexpected error in send_message_task: {e}\n")
+                    logger.error(f"Unexpected error in send_message_task: {e}", exc_info=True)
                 await asyncio.sleep(self.interval)
         else:
-            print("There was no valid channels found.")
+            logger.warning("There was no valid channels found.")
 
     async def send_demos_task(self):
         await self.wait_until_ready()
@@ -293,19 +290,16 @@ class DiscordClient(discord.Client):
                                     if (serv_channel is not None):
                                         await serv_channel.send(f"{demo.chatMessage} {post.jump_url}")
                             except asyncio.TimeoutError:
-                                with open("logs/sendDemoRuns_errors.txt", "a+") as fl:
-                                    fl.write(f"{datetime.datetime.now()} | Error uploading demo on discord : {demo}\n\n")
+                                logger.error(f"Error uploading demo on discord : {demo}")
                             except Exception as e:
-                                print("Error sending demos to discord. Cause: "+str(e))
+                                logger.error("Error sending demos to discord", exc_info=True)
                         else:
-                            with open("logs/sendDemoRuns_errors.txt", "a+") as fl:
-                                fl.write(f"{datetime.datetime.now()} | Error uploading demo on discord : {demo}. File doesn't exist: {demo.path}\n\n")
+                            logger.error(f"Error uploading demo on discord : {demo}. File doesn't exist: {demo.path}")
                 except Exception as e:
-                    with open("logs/sendDemoRuns_errors.txt", "a+") as fl:
-                        fl.write(f"{datetime.datetime.now()} | Unexpected error in send_demos_task: {e}\n")
+                    logger.error(f"Unexpected error in send_demos_task: {e}", exc_info=True)
                 await asyncio.sleep(self.interval)
         else:
-            print("Could not find channel for demos")
+            logger.warning("Could not find channel for demos")
 
     async def deleteStatusMessage(self, channel : discord.TextChannel):
         try:
@@ -314,8 +308,7 @@ class DiscordClient(discord.Client):
                 if (m.author == self.user):
                     await m.delete()
         except Exception as e:
-            with open("logs/updateStatusServers_errors.txt", "a+") as fl:
-                fl.write(f"{datetime.datetime.now()} | Error deleting status messages: {e}\n")
+            logger.error(f"Error deleting status messages: {e}", exc_info=True)
 
     async def initStatusMessage(self, channel : discord.TextChannel):
         for x in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
@@ -323,8 +316,7 @@ class DiscordClient(discord.Client):
                 emb = await generateEmbed(x.mapname, None, x.players, self.urt_discord_bridge.bridgeConfig, servername=x.servername, servAvailable=False)
                 x.status = await channel.send(embed=emb)
             except Exception as e:
-                with open("logs/updateStatusServers_errors.txt", "a+") as fl:
-                    fl.write(f"{datetime.datetime.now()} | Error initializing status message for {x.servername}: {e}\n")
+                logger.error(f"Error initializing status message for {x.servername}: {e}", exc_info=True)
                                       
     async def updateStatusServers(self):
         for serv in self.urt_discord_bridge.bridgeConfig.serverAdressDict.values():
@@ -337,17 +329,13 @@ class DiscordClient(discord.Client):
                                     servername=serv.servername, servAvailable=available, connectMessage=f"/connect {serv.displayedAddress}")
                         await serv.status.edit(embed=emb, view=ServerButtons(serv.mapname, self.urt_discord_bridge.bridgeConfig))
                 except asyncio.TimeoutError as e:
-                    with open("logs/updateStatusServers_errors.txt", "a+") as fl:
-                        fl.write(f"{datetime.datetime.now()} | [asyncio.TimeoutError ({str(e)})] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id} \n")
+                    logger.error(f"[asyncio.TimeoutError] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}", exc_info=True)
                 except discord.NotFound as e:
-                    with open("logs/updateStatusServers_errors.txt", "a+") as fl:
-                        fl.write(f"{datetime.datetime.now()} | [discord.NotFound ({str(e)})] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
+                    logger.error(f"[discord.NotFound] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}", exc_info=True)
                 except discord.HTTPException as e:
-                    with open("logs/updateStatusServers_errors.txt", "a+") as fl:
-                        fl.write(f"{datetime.datetime.now()} | [discord.HTTPException ({str(e)})] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
+                    logger.error(f"[discord.HTTPException] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}", exc_info=True)
                 except Exception as e:
-                    with open("logs/updateStatusServers_errors.txt", "a+") as fl:
-                        fl.write(f"{datetime.datetime.now()} | [Other ({str(e)})] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}\n")
+                    logger.error(f"[Other] Error to update map {serv.mapname} ({serv.address}) for messageId : {serv.status.id}", exc_info=True)
 
     @tasks.loop(seconds=30)
     async def set_discord_server_infos_task(self):
@@ -358,7 +346,7 @@ class DiscordClient(discord.Client):
         await self.wait_until_ready()
         channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.statusChannelId)
         if channel is None:
-            print(f"Could not find status channel (id: {self.urt_discord_bridge.bridgeConfig.statusChannelId}). Status loop will not start.")
+            logger.warning(f"Could not find status channel (id: {self.urt_discord_bridge.bridgeConfig.statusChannelId}). Status loop will not start.")
             self.set_discord_server_infos_task.cancel()
             return
         await self.deleteStatusMessage(channel)

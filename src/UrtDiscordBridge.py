@@ -4,6 +4,9 @@ from threading import RLock
 
 from src.RequestObjects import DemoInfos, DiscordMessage, ServerInfos, ServerMessage
 from src.BridgeConfig import BridgeConfig
+from src.logger import get_logger
+
+logger = get_logger("bridge")
 
 class UrtDiscordBridge():
 
@@ -64,19 +67,19 @@ class UrtDiscordBridge():
         for server in self.bridgeConfig.channelIdDict.values():
             try:
                 server.rcon("reloadMaps")
-                print(f"{server.address}:{server.port} | Reloadmaps OK")
+                logger.info(f"{server.address}:{server.port} | Reloadmaps OK")
                 # server.rcon("Maps have been reloaded.")
             except:
-                print(f"{server.address}:{server.port} | Reloadmaps KO (Server probably down)")
+                logger.warning(f"{server.address}:{server.port} | Reloadmaps KO (Server probably down)")
 
     def reloadMapInfos(self):
         for server in self.bridgeConfig.channelIdDict.values():
             try:
                 server.rcon("customCmd ReloadApi")
-                print(f"{server.address}:{server.port} | customCmd OK")
+                logger.info(f"{server.address}:{server.port} | customCmd OK")
                 # server.rcon("Maps have been reloaded.")
             except:
-                print(f"{server.address}:{server.port} | customCmd KO (Server probably down)")
+                logger.warning(f"{server.address}:{server.port} | customCmd KO (Server probably down)")
 
     def sendServerMessages(self, serverMessage : ServerMessage):
         message = f"^6[ALL] ^3{serverMessage.name}^7: {serverMessage.message}"
