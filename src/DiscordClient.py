@@ -218,12 +218,26 @@ class DiscordClient(discord.Client):
                 cpt+=1
         return cpt > 0
 
+    async def _run_supervised(self, coro_factory, name: str):
+        while not self.is_closed():
+            try:
+                await coro_factory()
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                logger.error(f"Task '{name}' crashed, restarting in 5s", exc_info=True)
+                await asyncio.sleep(5)
+                continue
+            if not self.is_closed():
+                logger.warning(f"Task '{name}' exited unexpectedly, restarting in 5s")
+                await asyncio.sleep(5)
+
     async def setup_hook(self) -> None:
         logger.debug("setup_hook")
         if (len(self.urt_discord_bridge.bridgeConfig.serverAdressDict) > 0):
-            self.messageTask = self.loop.create_task(self.send_message_task())
+            self.messageTask = self.loop.create_task(self._run_supervised(self.send_message_task, "send_message_task"))
         if (self.urt_discord_bridge.bridgeConfig.demoChannelId):
-            self.demoTask = self.loop.create_task(self.send_demos_task())
+            self.demoTask = self.loop.create_task(self._run_supervised(self.send_demos_task, "send_demos_task"))
         if (self.urt_discord_bridge.bridgeConfig.statusChannelId):
             self.set_discord_server_infos_task.start()
         
@@ -340,6 +354,11 @@ class DiscordClient(discord.Client):
     @tasks.loop(seconds=30)
     async def set_discord_server_infos_task(self):
         await self.updateStatusServers()
+
+    @set_discord_server_infos_task.error
+    async def set_discord_server_infos_task_error(self, error):
+        logger.error("Status update task crashed, restarting", exc_info=error)
+        self.set_discord_server_infos_task.restart()
 
     @set_discord_server_infos_task.before_loop
     async def set_discord_server_infos_task_before(self):
