@@ -1,6 +1,7 @@
 from typing import Dict
 import json
 
+import psycopg2
 from lib.py3quake3 import PyQuake3
 from src.UrtDiscordServer import UrtDiscordServer
 from src.RequestObjects import PingInfos
@@ -37,8 +38,10 @@ class BridgeConfig():
         self.ws_url : str = None
         self.domain : str = None
 
+        self.postgresql_uri : str = None
+
         self.globalChatKeys = list()
-        
+
         self.serverAdressDict : Dict[str, UrtDiscordServer] = dict()
         self.channelIdDict : Dict[int, PyQuake3] = dict()
         self.restartWithChannelId : Dict[int, str] = dict()
@@ -75,12 +78,17 @@ class BridgeConfig():
             if "domain" in datas['uvicorn']:
                 self.domain = datas['uvicorn']['domain']
 
+            if "postgresql_uri" in datas:
+                self.postgresql_uri = datas['postgresql_uri']
+
             # Setup all servs
             for serv in datas['servers']:
                 self.addServer(serv)
 
+            self.loadServersFromDB()
+
     def addServer(self, serverInfos : Dict):
-        servername = serverInfos["name"]
+        servername = serverInfos.get("name", "Server")
         ip = serverInfos["ip"]
         port = serverInfos["port"]
         rconpassword = serverInfos["rconpassword"]
@@ -93,6 +101,38 @@ class BridgeConfig():
         
         if ("restart" in serverInfos):
             self.restartWithChannelId[discordChannelId] = serverInfos["restart"]
+
+    def loadServersFromDB(self):
+        if self.postgresql_uri is None:
+            logger.debug("No postgresql_uri configured, skipping DB server load")
+            return
+        logger.info("Loading servers from database...")
+        try:
+            conn = psycopg2.connect(self.postgresql_uri, connect_timeout=1, options="-c default_transaction_read_only=on")
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT ip, port, rconpassword, channel_id, name FROM server")
+                    rows = cur.fetchall()
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.error(f"Failed to load servers from DB: {e}")
+            return
+
+        added = 0
+        for ip, port, rconpassword, channel_id, name in rows:
+            address = f"{ip}:{port}"
+            if address not in self.serverAdressDict:
+                self.addServer({
+                    "ip": ip,
+                    "port": port,
+                    "rconpassword": rconpassword,
+                    "channelId": channel_id,
+                    "name": name,
+                })
+                added += 1
+                logger.info(f"Added server from DB: {address}")
+        logger.info(f"DB server load complete: {added} new server(s) added")
 
     def getChannel(self, serverAdress):
         logger.debug(f"Get channel for : {serverAdress}")

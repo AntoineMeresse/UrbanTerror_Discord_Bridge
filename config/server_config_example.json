@@ -37,5 +37,6 @@
     "uvicorn" : {
         "url" : "localhost",
         "port" : 5000
-    }
+    },
+    "postgresql_uri" : "postgresql://user:password@localhost:5432/dbname"
 }
