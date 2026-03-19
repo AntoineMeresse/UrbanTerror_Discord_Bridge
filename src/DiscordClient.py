@@ -14,6 +14,7 @@ from src.ServerButtons import ServerButtons
 from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import convertMessage, discordBlock, generateEmbed, generateEmbedToprun, getProgressiveImages
+from src.PenDB import pen_of_the_day, pen_hall_of_fame, pen_hall_of_shame
 from src.ApiCalls import getServerStatus
 from src.logger import get_logger
 
@@ -93,6 +94,23 @@ class DiscordClient(discord.Client):
                 await message.channel.send(embed=emb)
             else:
                 await message.channel.send("Error trying to find a random map")
+        elif (cmd in ["!potd", "!phof", "!phos"]):
+            uri = self.urt_discord_bridge.bridgeConfig.postgresql_uri
+            if uri is None:
+                await message.channel.send("No database configured.")
+                return
+            try:
+                if cmd == "!potd":
+                    lines = await asyncio.to_thread(pen_of_the_day, uri)
+                elif cmd == "!phof":
+                    lines = await asyncio.to_thread(pen_hall_of_fame, uri)
+                else:
+                    lines = await asyncio.to_thread(pen_hall_of_shame, uri)
+                await message.channel.send(discordBlock(lines))
+            except Exception as e:
+                logger.error(f"Pen DB query failed: {e}")
+                await message.channel.send("Failed to retrieve data from database.")
+            return
         elif (cmd == "!help"):
             cmds = [
                 "Available commands :",
@@ -241,6 +259,8 @@ class DiscordClient(discord.Client):
             self.demoTask = self.loop.create_task(self._run_supervised(self.send_demos_task, "send_demos_task"))
         if (self.urt_discord_bridge.bridgeConfig.statusChannelId):
             self.set_discord_server_infos_task.start()
+        if (self.urt_discord_bridge.bridgeConfig.potdChannelId):
+            self.send_potd_task.start()
         
     async def send_message_task(self):
         await self.wait_until_ready()
@@ -355,6 +375,18 @@ class DiscordClient(discord.Client):
     @tasks.loop(seconds=30)
     async def set_discord_server_infos_task(self):
         await self.updateStatusServers()
+
+    @tasks.loop(time=datetime.time(hour=23, minute=59, second=59))
+    async def send_potd_task(self):
+        uri = self.urt_discord_bridge.bridgeConfig.postgresql_uri
+        channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.potdChannelId)
+        if uri is None or channel is None:
+            return
+        try:
+            lines = await asyncio.to_thread(pen_of_the_day, uri)
+            await channel.send(discordBlock(lines))
+        except Exception as e:
+            logger.error(f"Failed to publish POTD: {e}")
 
     @set_discord_server_infos_task.error
     async def set_discord_server_infos_task_error(self, error):

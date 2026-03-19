@@ -2,6 +2,7 @@
     "discordKey" : "example",
     "demoUrl" : "example",
     "demoChannelId" : 1234,
+    "potdChannelId" : 1234,
     "demoFileLog" : "apisend.log",
     "refreshInterval" : 1,
     "logo" : "https://urtjumpmaps.com/static/imgs/urtshells.png",

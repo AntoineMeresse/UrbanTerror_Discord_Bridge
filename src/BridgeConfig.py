@@ -16,6 +16,7 @@ class BridgeConfig():
 
         self.discordKey : str = None
         self.demoChannelId : int = None
+        self.potdChannelId : int = None
         self.statusChannelId : str = None
         self.mappingChannelId : str = None
         self.adminRole : int = None
@@ -55,6 +56,7 @@ class BridgeConfig():
             
             self.discordKey = datas['discordKey']
             self.demoChannelId = datas['demoChannelId']
+            self.potdChannelId = datas.get('potdChannelId')
             self.statusChannelId = datas['statusChannelId']
             self.mappingChannelId = datas['mappingChannelId']
             self.adminRole = datas['adminRole']
