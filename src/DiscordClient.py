@@ -328,6 +328,10 @@ class DiscordClient(discord.Client):
                                 logger.error(f"Error uploading demo on discord : {demo}")
                             except Exception as e:
                                 logger.error("Error sending demos to discord", exc_info=True)
+                            finally:
+                                if demo.tmp and os.path.isfile(demo.path):
+                                    os.remove(demo.path)
+                                    logger.debug(f"Deleted tmp demo file: {demo.path}")
                         else:
                             logger.error(f"Error uploading demo on discord : {demo}. File doesn't exist: {demo.path}")
                 except Exception as e:

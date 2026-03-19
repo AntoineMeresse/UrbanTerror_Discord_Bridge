@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, Form, HTTPException, Request, UploadFile
 
 from typing import Tuple
 from src.map_repository import getAllMaps, getMapPath, getMapsWithPattern
@@ -41,6 +41,9 @@ def initDiscordBot() -> Tuple[BridgeConfig, UrtDiscordBridge, DiscordClient]:
     intents = discord.Intents.default()
     intents.message_content = True
     return bridgeConfig, bridge, DiscordClient(intents=intents, urt_discord_bridge=bridge)
+
+def mb(n: int) -> int:
+    return n * 1024 * 1024
 
 bridgeConfig, bridge, bot = initDiscordBot()
 
@@ -101,6 +104,20 @@ async def sendMessageEmbed(message: DiscordMessageEmbed):
 async def sendDemo(demo : DemoInfos):
     bridge.addDemos(demosInfos= demo)
     return demo
+
+@local.post("/demo/upload")
+async def uploadDemo(
+    file: UploadFile,
+    serverAddress: str = Form(...),
+    msg: str = Form(...),
+    chatMessage: str = Form(...),
+):
+    if not (file.filename.endswith(".dm_68") or file.filename.endswith(".urtdemo")):
+        raise HTTPException(status_code=400, detail="Only .dm_68 and .urtdemo demo files are accepted")
+    content = await file.read()
+    if len(content) > mb(50):
+        raise HTTPException(status_code=413, detail="Demo file exceeds the 50MB limit")
+    bridge.addDemoFromUpload(content, file.filename, serverAddress, msg, chatMessage)
 
 @local.post("/server")
 async def updateServer(infos : ServerInfos):

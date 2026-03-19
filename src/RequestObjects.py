@@ -22,6 +22,7 @@ class DemoInfos(BaseModel):
     path : str
     name : str
     chatMessage : str
+    tmp : bool = False
 
     def __str__(self):
         return f"{self.serverAddress} | {self.msg} | {self.path} | {self.name} | {self.chatMessage}"

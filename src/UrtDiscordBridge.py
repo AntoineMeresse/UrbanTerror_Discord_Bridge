@@ -1,3 +1,5 @@
+import os
+import tempfile
 from queue import Queue
 import textwrap
 from threading import RLock
@@ -47,6 +49,20 @@ class UrtDiscordBridge():
 
     def addDemos(self, demosInfos : DemoInfos) -> None:
         self.demos.put(demosInfos)
+
+    def addDemoFromUpload(self, content: bytes, filename: str, serverAddress: str, msg: str, chatMessage: str) -> None:
+        tmp_dir = tempfile.mkdtemp()
+        tmp_path = os.path.join(tmp_dir, filename)
+        with open(tmp_path, "wb") as f:
+            f.write(content)
+        self.demos.put(DemoInfos(
+            serverAddress=serverAddress,
+            msg=msg,
+            path=tmp_path,
+            name=filename,
+            chatMessage=chatMessage,
+            tmp=True,
+        ))
     
     def getListDemos(self) -> Queue[DemoInfos]:
         return self.demos
