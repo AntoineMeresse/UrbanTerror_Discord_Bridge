@@ -28,7 +28,7 @@ def pen_of_the_day(uri: str):
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT pen.*, player.name
+                SELECT pen.id, pen.guid, pen.date, pen.size, player.name
                 FROM pen
                 JOIN player ON pen.guid = player.guid
                 WHERE date = %s
@@ -58,7 +58,7 @@ def pen_hall_of_fame(uri: str):
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT pen.*, player.name
+                SELECT pen.id, pen.guid, pen.date, pen.size, player.name
                 FROM pen
                 JOIN player ON pen.guid = player.guid
                 WHERE EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM %s::date)
@@ -87,7 +87,7 @@ def pen_hall_of_shame(uri: str):
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT pen.*, player.name
+                SELECT pen.id, pen.guid, pen.date, pen.size, player.name
                 FROM pen
                 JOIN player ON pen.guid = player.guid
                 WHERE EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM %s::date)
