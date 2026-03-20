@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import psycopg2
 
@@ -21,8 +21,7 @@ def _connect(uri: str):
     return psycopg2.connect(uri, connect_timeout=5, options=_CONNECT_OPTS)
 
 
-def pen_of_the_day(uri: str):
-    today = date.today()
+def pen_of_the_day(uri: str, target_date: date):
     conn = _connect(uri)
     try:
         with conn.cursor() as cur:
@@ -35,20 +34,28 @@ def pen_of_the_day(uri: str):
                 ORDER BY size DESC
                 LIMIT %s
                 """,
-                (today, POTD_LIMIT),
+                (target_date, POTD_LIMIT),
             )
             rows = cur.fetchall()
     finally:
         conn.close()
     # rows: (id, guid, date, size, name)
-    lines = [f"=========== Pen of the day ({today}) ==========="]
+    lines = [f"=========== Pen of the day ({target_date}) ==========="]
     if not rows:
-        lines.append("Use !pen, there is no pen values yet :(")
+        lines.append("Connect to a server and use !pen, there is no values yet :(")
     else:
         for i, (_, _, _, size, name) in enumerate(rows):
             pen = _pen_symbol(i + 1, hos=False)
             lines.append(f"{pen} {name} : {size:.3f} cm.")
     return lines
+
+
+def pen_of_today(uri: str):
+    return pen_of_the_day(uri, date.today())
+
+
+def pen_of_yesterday(uri: str):
+    return pen_of_the_day(uri, date.today() - timedelta(days=1))
 
 
 def pen_hall_of_fame(uri: str):

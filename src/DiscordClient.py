@@ -14,7 +14,7 @@ from src.ServerButtons import ServerButtons
 from src.RequestObjects import DemoInfos, DiscordMessage, DiscordMessageEmbed
 from src.UrtDiscordBridge import UrtDiscordBridge
 from src.utils import convertMessage, discordBlock, generateEmbed, generateEmbedToprun, getProgressiveImages
-from src.PenDB import pen_of_the_day, pen_hall_of_fame, pen_hall_of_shame
+from src.PenDB import pen_of_today, pen_of_yesterday, pen_hall_of_fame, pen_hall_of_shame
 from src.ApiCalls import getServerStatus
 from src.logger import get_logger
 
@@ -101,7 +101,7 @@ class DiscordClient(discord.Client):
                 return
             try:
                 if cmd == "!potd":
-                    lines = await asyncio.to_thread(pen_of_the_day, uri)
+                    lines = await asyncio.to_thread(pen_of_today, uri)
                 elif cmd == "!phof":
                     lines = await asyncio.to_thread(pen_hall_of_fame, uri)
                 else:
@@ -380,14 +380,14 @@ class DiscordClient(discord.Client):
     async def set_discord_server_infos_task(self):
         await self.updateStatusServers()
 
-    @tasks.loop(time=datetime.time(hour=23, minute=59, second=59))
+    @tasks.loop(time=datetime.time(hour=0, minute=0, second=30))
     async def send_potd_task(self):
         uri = self.urt_discord_bridge.bridgeConfig.postgresql_uri
         channel = self.get_channel(self.urt_discord_bridge.bridgeConfig.potdChannelId)
         if uri is None or channel is None:
             return
         try:
-            lines = await asyncio.to_thread(pen_of_the_day, uri)
+            lines = await asyncio.to_thread(pen_of_yesterday, uri)
             await channel.send(discordBlock(lines))
         except Exception as e:
             logger.error(f"Failed to publish POTD: {e}")
