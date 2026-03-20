@@ -86,6 +86,17 @@ class DiscordClient(discord.Client):
             else:
                 await message.channel.send("You are not an [UJM] Admin")
             return
+        elif (cmd == "!restartbridge"):
+            if (self.messageAuthorHasRole(message, self.urt_discord_bridge.bridgeConfig.adminRole)):
+                restart_cmd = self.urt_discord_bridge.bridgeConfig.bridgeRestartCmd
+                if restart_cmd is not None:
+                    await message.channel.send("Bridge restarting...")
+                    subprocess.Popen(restart_cmd, shell=True, preexec_fn=os.setpgrp)
+                else:
+                    await message.channel.send("No bridge restart command configured.")
+            else:
+                await message.channel.send("You are not an [UJM] Admin")
+            return
         elif (cmd in ["!roll", "!random"]):
             mapname = await getRandomMap(self.urt_discord_bridge.bridgeConfig.apikey)
             if mapname is not None:

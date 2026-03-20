@@ -40,6 +40,7 @@ class BridgeConfig():
         self.domain : str = None
 
         self.postgresql_uri : str = None
+        self.bridgeRestartCmd : str = None
 
         self.globalChatKeys = list()
 
@@ -82,6 +83,9 @@ class BridgeConfig():
 
             if "postgresql_uri" in datas:
                 self.postgresql_uri = datas['postgresql_uri']
+
+            if "bridgeRestartCmd" in datas:
+                self.bridgeRestartCmd = datas['bridgeRestartCmd']
 
             # Setup all servs
             for serv in datas['servers']:
