@@ -140,7 +140,8 @@ def discordBlock(elems : List[str]) -> str:
 def convertMessage(discordMessage : DiscordMessage) -> str:
     team = discordMessage.team
     prefix = team if (team is not None) else ""
-    return decolorstring(f"{prefix}{discordMessage.message}")
+    msg = re.sub(r'[@#]\S+', '', f"{prefix}{discordMessage.message}")
+    return decolorstring(msg)
 
 def getProgressiveImages(file) -> list[str]:
     res = list()
